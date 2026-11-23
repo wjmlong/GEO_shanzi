@@ -1,0 +1,16 @@
+# YAML 1.1 将未加引号的 on/off 当作布尔值，务必加引号。
+repeat: 3
+interval: 1
+temperature: 0.7
+timeout: 60
+estimated_output_tokens: 600
+engines:
+  deepseek:
+    model: deepseek-chat
+    web_search: "off"
+    extra_body: {}
+  doubao:
+    # 模型接入点只从 DOUBAO_ENDPOINT_ID 读取。
+    web_search: "off"
+    # 联网参数待按官方文档核实；开启 on 前将核实后的额外请求体填在这里。
+    extra_body: {}

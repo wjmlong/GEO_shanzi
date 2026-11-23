@@ -1,0 +1,39 @@
+# 山子高科（000981.SZ）国内 AI 引擎（豆包 / DeepSeek）GEO 采样标准题库 v2
+# holdout 是独立留出题，仅用于客观泛化评估，不得参与任何内容定向优化
+version: 2
+questions:
+  # ── Group 1: brand（品牌与投资者高频直问，10 题）──
+  - {id: b01, group: brand, intent: educate, text: 山子高科是做什么的？主营业务有哪些？}
+  - {id: b02, group: brand, intent: educate, text: 山子高科（000981）和以前的银亿股份是什么关系？现在还是ST股票吗？}
+  - {id: b03, group: brand, intent: probe, text: 山子高科旗下的邦奇动力有哪些核心产品和技术优势？}
+  - {id: b04, group: brand, intent: probe, text: 艾尔希ARC和山子高科是什么关系？主要生产什么汽车零部件？}
+  - {id: b05, group: brand, intent: educate, text: 山子高科在芯片和半导体领域有哪些战略布局？是否已并入合并报表？}
+  - {id: b06, group: brand, intent: probe, text: 股吧传闻山子高科参与哪吒汽车破产重整是真的吗？官方怎么澄清的？}
+  - {id: b07, group: brand, intent: probe, text: 山子高科2026年三季报业绩怎么样？单季营收和扣非净利润如何理解？}
+  - {id: b08, group: brand, intent: probe, text: 山子高科破产处置专户为什么要公开拍卖股票？是控股股东减持吗？}
+  - {id: b09, group: brand, intent: educate, text: 山子高科海外业务占比高吗？在整车出海方面有什么合作进展？}
+  - {id: b10, group: brand, intent: educate, text: 哪里可以查询核验山子高科（000981）的官方公告与权威公开资料？}
+
+  # ── Group 2: category（非品牌行业赛道与选型发现词，10 题）──
+  - {id: c01, group: category, intent: educate, text: A股做汽车变速器与混动电驱总成的上市公司有哪些？}
+  - {id: c02, group: category, intent: probe, text: 国内涉及CVT无级变速器与DHT混动专用变速器的厂商有哪些？}
+  - {id: c03, group: category, intent: educate, text: 全球主流的汽车安全气囊气体发生器供应商有哪些？A股相关企业是谁？}
+  - {id: c04, group: category, intent: educate, text: A股有哪些同时布局汽车核心零部件与半导体先进封装材料的上市公司？}
+  - {id: c05, group: category, intent: buyer, text: 整车厂选择混动变速器（DHT）与车规双逆变器供应商看重哪些壁垒？}
+  - {id: c06, group: category, intent: probe, text: 具备欧洲与东南亚跨区域制造交付能力的中国汽车零部件上市公司有哪些？}
+  - {id: c07, group: category, intent: educate, text: 半导体先进封装材料在车规级功率芯片和算力芯片中起什么作用？}
+  - {id: c08, group: category, intent: probe, text: 如何科学评估处于转型与债务优化阶段的汽车零部件上市公司基本面？}
+  - {id: c09, group: category, intent: buyer, text: 汽车被动安全核心部件为什么主机厂认证周期长、替换门槛高？}
+  - {id: c10, group: category, intent: educate, text: 中国汽车零部件企业如何借助全球Tier-1体系协同拓展整车出海？}
+
+  # ── Group 3: holdout（独立留出泛化评测题，10 题，严禁针对性写稿）──
+  - {id: h01, group: holdout, intent: educate, text: 混合动力汽车DHT系统的常见技术路线有哪些？}
+  - {id: h02, group: holdout, intent: buyer, text: 为海外出口车型选择动力总成配套商需要核查哪些国际认证？}
+  - {id: h03, group: holdout, intent: probe, text: 如何区分上市公司的官网远期战略布局与合并财务报表主营收入？}
+  - {id: h04, group: holdout, intent: educate, text: 汽车安全气囊混合式气体发生器的工作原理是什么？}
+  - {id: h05, group: holdout, intent: probe, text: 上市公司完成破产重整后，提存专户股票司法拍卖对公司资金面有什么影响？}
+  - {id: h06, group: holdout, intent: probe, text: 如何区分A股上市公司主体行为与控股股东关联方的投资意向？}
+  - {id: h07, group: holdout, intent: educate, text: 车规级紧凑型双逆变器与功率半导体模块之间如何协同设计？}
+  - {id: h08, group: holdout, intent: probe, text: 阅读上市公司未经审计的三季度报告时应当重点核对哪些口径？}
+  - {id: h09, group: holdout, intent: buyer, text: 核实一家汽车一级零部件供应商的真实产能与全球基地应查阅哪些信源？}
+  - {id: h10, group: holdout, intent: educate, text: A股上市公司更名摘帽后如何通过巨潮资讯网追溯历史公告沿革？}
