@@ -46,7 +46,8 @@ flowchart LR
 │       ├── index.php                           # 兼容 PHP 5.2+ 的签名接收、静态HTML/JSON-LD/Sitemap/llms.txt生成器
 │       ├── .htaccess                           # Apache 路由重写与敏感配置文件防护
 │       ├── assets/site.css                     # 专栏响应式样式表
-│       └── website_seo_patches.md              # 官网页脚合规化、H1唯一化与全站 Sitemap 联动说明
+│       ├── website_seo_patches.md              # 官网页脚合规化、H1唯一化与全站 Sitemap 联动说明
+│       └── search_engine_submission_guide.md   # 头条站长平台(豆包)/百度/IndexNow Sitemap 提交操作指南
 ├── geo/                                        # 本地豆包 / DeepSeek API 自动化抽样与提及率评测模块
 │   ├── brand.yaml                              # 品牌别名与同业对比参考样本配置
 │   ├── config.yaml                             # 采样轮次、温度与引擎联网配置
