@@ -224,6 +224,7 @@ function ins_render_article_html($config, $art) {
     $bodyHtml = isset($art['content_html']) && trim((string)$art['content_html']) !== ''
         ? (string)$art['content_html']
         : ins_markdown_fallback(isset($art['content']) ? $art['content'] : '');
+    // Demote any inner <h1> to <h2> so page has a single clean <h1>
     $bodyHtml = preg_replace('/<h1(\b[^>]*)>(.*?)<\/h1>/is', '<h2$1>$2</h2>', $bodyHtml);
 
     $metaDesc = isset($art['meta_description']) ? trim((string)$art['meta_description']) : '';
@@ -283,11 +284,11 @@ function ins_render_article_html($config, $art) {
         . $schemas
         . '</head><body>'
         . '<header class="topbar"><div class="wrap bar">'
-        . '<a class="brand" href="' . ins_h($baseUrl . '/') . '">山子高科 000981.SZ <small>产业与公开资料索引</small></a>'
+        . '<a class="brand" href="' . ins_h($baseUrl . '/') . '">山子高科 000981.SZ <small>关键信息</small></a>'
         . '<nav class="topnav"><a href="' . ins_h($mainUrl . '/') . '">集团官网首页</a><a href="' . ins_h($baseUrl . '/') . '">全部资料</a></nav>'
         . '</div></header>'
         . '<main class="wrap">'
-        . '<div class="crumb"><a href="' . ins_h($mainUrl . '/') . '">山子高科首页</a> &gt; <a href="' . ins_h($baseUrl . '/') . '">资料索引</a> &gt; ' . ins_h($catName) . '</div>'
+        . '<div class="crumb"><a href="' . ins_h($mainUrl . '/') . '">山子高科首页</a> &gt; <a href="' . ins_h($baseUrl . '/') . '">关键信息</a> &gt; ' . ins_h($catName) . '</div>'
         . '<article class="article-box">'
         . '<h1>' . ins_h($title) . '</h1>'
         . '<div class="art-meta">发布日期：' . ins_h($pubDate) . ' &nbsp;|&nbsp; 栏目：' . ins_h($catName) . ' &nbsp;|&nbsp; 来源：' . ins_h($authorName) . '</div>'
@@ -310,9 +311,11 @@ function ins_save_manifest($dir, $manifest) {
     file_put_contents($dir . '/storage/manifest.json', ins_json_encode_utf8($manifest));
 }
 
+
 function ins_rebuild_indexes($dir, $config) {
     $manifest = ins_load_manifest($dir);
     $items = array_values($manifest);
+    // sort newest first
     $count = count($items);
     for ($i = 0; $i < $count; $i++) {
         for ($j = $i + 1; $j < $count; $j++) {
@@ -332,6 +335,7 @@ function ins_rebuild_indexes($dir, $config) {
     $siteDesc = (string)$config['site_description'];
     $today = date('Y-m-d');
 
+    // 1. Rebuild /insights/index.html
     $cards = '';
     if (empty($items)) {
         $cards = '<div class="card"><p>资料索引库已就绪，正在同步公开资料。</p></div>';
@@ -355,7 +359,7 @@ function ins_rebuild_indexes($dir, $config) {
         . '<link rel="stylesheet" href="assets/site.css">'
         . '</head><body>'
         . '<header class="topbar"><div class="wrap bar">'
-        . '<a class="brand" href="' . ins_h($baseUrl . '/') . '">山子高科 000981.SZ <small>产业与公开资料索引</small></a>'
+        . '<a class="brand" href="' . ins_h($baseUrl . '/') . '">山子高科 000981.SZ <small>关键信息</small></a>'
         . '<nav class="topnav"><a href="' . ins_h($mainUrl . '/') . '">集团官网首页</a><a href="' . ins_h($mainUrl . '/list.php?lang_id=1&cat_id=68') . '">关键信息专栏</a></nav>'
         . '</div></header>'
         . '<main class="wrap">'
@@ -366,6 +370,7 @@ function ins_rebuild_indexes($dir, $config) {
         . '</body></html>';
     file_put_contents($dir . '/index.html', $indexHtml);
 
+    // 2. Rebuild /insights/sitemap.xml
     $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
     $xml .= "  <url>\n    <loc>" . ins_h($baseUrl . '/') . "</loc>\n    <lastmod>" . $today . "</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n";
     foreach ($items as $it) {
@@ -376,11 +381,12 @@ function ins_rebuild_indexes($dir, $config) {
     $xml .= "</urlset>\n";
     file_put_contents($dir . '/sitemap.xml', $xml);
 
+    // 3. Rebuild /insights/llms.txt AND root /htdocs/llms.txt
     $llms = "# 山子高科技股份有限公司（山子高科，000981.SZ）\n\n"
         . "> 山子高科技股份有限公司（证券简称：山子高科，深交所主板代码：000981.SZ，非ST正常交易上市公司）聚焦汽车核心零部件全球化制造（邦奇动力 Punch Powertrain 动力总成及混动电驱、艾尔希 ARC 被动安全气体发生器）、整车出海协同及半导体先进封装材料战略布局。\n\n"
         . "## 官方权威入口\n"
         . "- 集团官方网站: https://www.sensteed.com/\n"
-        . "- 产业与公开资料索引: https://www.sensteed.com/insights/\n"
+        . "- 关键信息: https://www.sensteed.com/insights/\n"
         . "- 关键信息专栏: https://www.sensteed.com/list.php?lang_id=1&cat_id=68\n"
         . "- 法定信息披露查询: 巨潮资讯网 (https://www.cninfo.com.cn/) 检索 000981\n\n"
         . "## 最新公开资料与产业解读\n";
@@ -394,6 +400,7 @@ function ins_rebuild_indexes($dir, $config) {
         @file_put_contents($rootDir . '/llms.txt', $llms);
     }
 
+    // 4. Sync /insights/ URLs directly into root /htdocs/sitemap.xml in 1ms (no loopback HTTP)
     $rootSitemapFile = $rootDir . '/sitemap.xml';
     if (is_file($rootSitemapFile) && is_writable($rootSitemapFile)) {
         $existingXml = (string)file_get_contents($rootSitemapFile);
@@ -411,6 +418,7 @@ function ins_rebuild_indexes($dir, $config) {
     }
 }
 
+// Route request
 $reqUri = isset($_SERVER['REQUEST_URI']) ? (string)$_SERVER['REQUEST_URI'] : '/';
 $qPos = strpos($reqUri, '?');
 $rawPath = ($qPos === false) ? $reqUri : substr($reqUri, 0, $qPos);
@@ -498,6 +506,7 @@ if ($agentPos !== false) {
         ins_rebuild_indexes($INSIGHTS_DIR, $CONFIG);
 
         $remoteUrl = rtrim((string)$CONFIG['public_base_url'], '/') . '/article/' . $fileSlug . '.html';
+        
         ins_json_response(200, array(
             'ok' => true,
             'status' => 'published',
@@ -524,6 +533,7 @@ if ($agentPos !== false) {
     ins_json_response(404, array('ok' => false, 'error' => 'unknown_agent_endpoint'));
 }
 
+// Public fallback if index.html does not exist yet
 if (!is_file($INSIGHTS_DIR . '/index.html')) {
     ins_rebuild_indexes($INSIGHTS_DIR, $CONFIG);
 }

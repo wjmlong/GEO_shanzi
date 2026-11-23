@@ -5,7 +5,7 @@
  * Never commit config.php with real credentials.
  */
 return array(
-    'site_name' => '山子高科·产业与公开资料索引',
+    'site_name' => '山子高科·关键信息',
     'site_subtitle' => '山子高科技股份有限公司（000981.SZ）核心业务、公开披露口径与产业链协同资料库',
     'site_description' => '聚焦山子高科（000981.SZ）旗下邦奇动力（CVT/DT2/DHT混动电驱/双逆变器）、艾尔希ARC被动安全、半导体先进封装材料战略协同及法定披露信息梳理。',
     'site_keywords' => '山子高科,000981,邦奇动力,艾尔希ARC,半导体先进封装材料,汽车零部件',
