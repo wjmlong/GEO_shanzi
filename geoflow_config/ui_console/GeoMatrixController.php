@@ -38,38 +38,131 @@ class GeoMatrixController extends Controller
         $name = (string) ($acc->account_name ?? '');
         $platform = (string) ($acc->platform ?? 'custom');
         $editorUrl = (string) ($acc->profile_url ?? '');
+        $stoneTag = 'sz-tag-stone';
+        $bronzeTag = 'sz-tag-bronze';
+
+        if (str_contains($name, '官网') || str_contains($editorUrl, 'sensteed.com')) {
+            return [
+                'code' => 'CH-01',
+                'short_name' => '官网 · 关键信息',
+                'ai_target' => '全引擎权威源',
+                'summary' => '1 秒自动静态化至 sensteed.com/insights/ 并刷新 Sitemap',
+                'badge' => $bronzeTag,
+                'editor_url' => 'https://www.sensteed.com/insights/',
+                'domain' => 'sensteed.com',
+                'is_official' => true,
+            ];
+        }
         if ($platform === 'toutiao') {
             $editorUrl = PlatformCatalog::editorUrl('toutiao', null);
-            return ['ai_target' => '豆包亲儿子主力', 'badge' => 'bg-rose-50 text-rose-700 border-rose-200', 'editor_url' => $editorUrl, 'domain' => 'toutiao.com', 'is_official' => false];
+            return [
+                'code' => 'CH-02',
+                'short_name' => '今日头条',
+                'ai_target' => '豆包核心源',
+                'summary' => '优先同步过检深度专稿与问答澄清稿',
+                'badge' => $bronzeTag,
+                'editor_url' => $editorUrl,
+                'domain' => 'toutiao.com',
+                'is_official' => false,
+            ];
         }
         if ($platform === 'sohu') {
             $editorUrl = PlatformCatalog::editorUrl('sohu', null);
-            return ['ai_target' => 'DeepSeek 门户主力', 'badge' => 'bg-blue-50 text-blue-700 border-blue-200', 'editor_url' => $editorUrl, 'domain' => 'sohu.com', 'is_official' => false];
+            return [
+                'code' => 'CH-03',
+                'short_name' => '搜狐号',
+                'ai_target' => 'DeepSeek 门户',
+                'summary' => '发布业务与财报拆解长文并回填线上链接',
+                'badge' => $stoneTag,
+                'editor_url' => $editorUrl,
+                'domain' => 'sohu.com',
+                'is_official' => false,
+            ];
         }
         if ($platform === 'netease') {
             $editorUrl = PlatformCatalog::editorUrl('netease', null);
-            return ['ai_target' => 'DeepSeek 门户补位', 'badge' => 'bg-blue-50 text-blue-700 border-blue-200', 'editor_url' => $editorUrl, 'domain' => '163.com', 'is_official' => false];
-        }
-        if ($platform === 'douyin') {
-            return ['ai_target' => '豆包独占视频简介', 'badge' => 'bg-purple-50 text-purple-700 border-purple-200', 'editor_url' => 'https://creator.douyin.com/', 'domain' => 'douyin.com', 'is_official' => false];
-        }
-        if ($platform === 'wechat') {
-            return ['ai_target' => '腾讯元宝 + 官方母稿', 'badge' => 'bg-emerald-50 text-emerald-700 border-emerald-200', 'editor_url' => 'https://mp.weixin.qq.com/', 'domain' => 'mp.weixin.qq.com', 'is_official' => false];
-        }
-        if ($platform === 'xiaohongshu') {
-            return ['ai_target' => '散户图文触达', 'badge' => 'bg-gray-100 text-gray-600 border-gray-200', 'editor_url' => 'https://creator.xiaohongshu.com/', 'domain' => 'xiaohongshu.com', 'is_official' => false];
-        }
-        if (str_contains($name, '官网') || str_contains($editorUrl, 'sensteed.com')) {
-            return ['ai_target' => '豆包+百度+DeepSeek 权威源', 'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200', 'editor_url' => 'https://www.sensteed.com/insights/', 'domain' => 'sensteed.com', 'is_official' => true];
+            return [
+                'code' => 'CH-04',
+                'short_name' => '网易号',
+                'ai_target' => 'DeepSeek 补位',
+                'summary' => '覆盖产业协同与汽配业务增量门户收录',
+                'badge' => $stoneTag,
+                'editor_url' => $editorUrl,
+                'domain' => '163.com',
+                'is_official' => false,
+            ];
         }
         if (str_contains($name, '东方财富')) {
-            return ['ai_target' => 'DeepSeek 头号财经源', 'badge' => 'bg-amber-50 text-amber-800 border-amber-200', 'editor_url' => 'https://guba.eastmoney.com/list,000981.html', 'domain' => 'eastmoney.com', 'is_official' => false];
+            return [
+                'code' => 'CH-05',
+                'short_name' => '东方财富股吧',
+                'ai_target' => '财经头号源',
+                'summary' => '发表带完整标题的独立主帖或财富号文章',
+                'badge' => $bronzeTag,
+                'editor_url' => 'https://guba.eastmoney.com/list,000981.html',
+                'domain' => 'eastmoney.com',
+                'is_official' => false,
+            ];
         }
         if (str_contains($name, '同花顺')) {
-            return ['ai_target' => 'DeepSeek 高覆盖财经源', 'badge' => 'bg-amber-50 text-amber-800 border-amber-200', 'editor_url' => 'https://basic.10jqka.com.cn/000981/', 'domain' => '10jqka.com.cn', 'is_official' => false];
+            return [
+                'code' => 'CH-06',
+                'short_name' => '同花顺社区',
+                'ai_target' => '财经高覆盖源',
+                'summary' => '同步标准问答与澄清主帖，避免仅回帖',
+                'badge' => $stoneTag,
+                'editor_url' => 'https://basic.10jqka.com.cn/000981/',
+                'domain' => '10jqka.com.cn',
+                'is_official' => false,
+            ];
+        }
+        if ($platform === 'douyin') {
+            return [
+                'code' => 'CH-07',
+                'short_name' => '抖音',
+                'ai_target' => '豆包视频简介',
+                'summary' => '发视频时完整填写 200 字网页摘要文字',
+                'badge' => $stoneTag,
+                'editor_url' => 'https://creator.douyin.com/',
+                'domain' => 'douyin.com',
+                'is_official' => false,
+            ];
+        }
+        if ($platform === 'wechat') {
+            return [
+                'code' => 'CH-08',
+                'short_name' => '微信公众号',
+                'ai_target' => '元宝与官方母稿',
+                'summary' => '沉淀权威图文母稿，覆盖微信与腾讯元宝',
+                'badge' => $stoneTag,
+                'editor_url' => 'https://mp.weixin.qq.com/',
+                'domain' => 'mp.weixin.qq.com',
+                'is_official' => false,
+            ];
+        }
+        if ($platform === 'xiaohongshu') {
+            return [
+                'code' => 'CH-09',
+                'short_name' => '小红书',
+                'ai_target' => '图文日常触达',
+                'summary' => '复用图文卡片触达个人投资者日常检索',
+                'badge' => $stoneTag,
+                'editor_url' => 'https://creator.xiaohongshu.com/',
+                'domain' => 'xiaohongshu.com',
+                'is_official' => false,
+            ];
         }
 
-        return ['ai_target' => '综合传播渠道', 'badge' => 'bg-gray-100 text-gray-700 border-gray-200', 'editor_url' => $editorUrl ?: '#', 'domain' => '', 'is_official' => false];
+        return [
+            'code' => 'CH-00',
+            'short_name' => $name ?: '扩展渠道',
+            'ai_target' => '综合渠道',
+            'summary' => '自定义外部传播渠道',
+            'badge' => $stoneTag,
+            'editor_url' => $editorUrl ?: '#',
+            'domain' => '',
+            'is_official' => false,
+        ];
     }
 
     public static function matrixData(): array
@@ -126,9 +219,12 @@ class GeoMatrixController extends Controller
             $dom = $meta['domain'];
             $accStats[$acc->id] = [
                 'id' => $acc->id,
+                'code' => $meta['code'],
                 'name' => $acc->account_name,
+                'short_name' => $meta['short_name'],
                 'platform' => $acc->platform,
                 'ai_target' => $meta['ai_target'],
+                'summary' => $meta['summary'],
                 'badge' => $meta['badge'],
                 'editor_url' => $meta['editor_url'],
                 'notes' => (string) ($acc->notes ?? ''),
@@ -158,9 +254,9 @@ class GeoMatrixController extends Controller
                 'id' => 'dist-' . $row->id,
                 'manual_publication_id' => null,
                 'account_id' => $officialAccId,
-                'platform_label' => '① 官网—关键信息板块',
-                'ai_target' => '豆包+百度+DeepSeek 权威源',
-                'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                'platform_label' => '官网 · 关键信息',
+                'ai_target' => '全引擎权威源',
+                'badge' => 'sz-tag-bronze',
                 'title' => (string) $row->title,
                 'content' => (string) ($row->content ?? ''),
                 'status' => 'completed',
@@ -181,9 +277,9 @@ class GeoMatrixController extends Controller
                 'id' => 'leg-' . md5($u),
                 'manual_publication_id' => null,
                 'account_id' => $officialAccId,
-                'platform_label' => '① 官网—关键信息板块',
-                'ai_target' => '豆包+百度+DeepSeek 权威源',
-                'badge' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                'platform_label' => '官网 · 关键信息',
+                'ai_target' => '全引擎权威源',
+                'badge' => 'sz-tag-bronze',
                 'title' => $leg['title'],
                 'content' => '',
                 'status' => 'completed',
@@ -217,9 +313,9 @@ class GeoMatrixController extends Controller
                 'id' => 'mp-' . $m->id,
                 'manual_publication_id' => (int) $m->id,
                 'account_id' => $aid,
-                'platform_label' => $st ? $st['name'] : ((string) ($m->account_name ?: $m->platform)),
+                'platform_label' => $st ? $st['short_name'] : ((string) ($m->account_name ?: $m->platform)),
                 'ai_target' => $st ? $st['ai_target'] : '外部平台',
-                'badge' => $st ? $st['badge'] : 'bg-gray-100 text-gray-700 border-gray-200',
+                'badge' => $st ? $st['badge'] : 'sz-tag-stone',
                 'title' => $title,
                 'content' => (string) ($m->content ?? ''),
                 'status' => (string) $m->status,
