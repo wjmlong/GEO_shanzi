@@ -11,6 +11,7 @@ use App\Models\ManualPublication;
 use App\Models\ManualPublicationAccount;
 use App\Services\GeoFlow\AiVisibility\AiVisibilityKeywordNormalizer;
 use App\Services\GeoFlow\Distribution\PlatformWeb\PlatformCatalog;
+use App\Services\GeoFlow\DistributionPayloadBuilder;
 use App\Services\GeoFlow\DistributionPublisherManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -38,8 +39,8 @@ class GeoMatrixController extends Controller
         $name = (string) ($acc->account_name ?? '');
         $platform = (string) ($acc->platform ?? 'custom');
         $editorUrl = (string) ($acc->profile_url ?? '');
-        $stoneTag = 'sz-tag-stone';
-        $bronzeTag = 'sz-tag-bronze';
+        $stoneTag = 'sz-tag-slate';
+        $bronzeTag = 'sz-tag-blue';
 
         if (str_contains($name, '官网') || str_contains($editorUrl, 'sensteed.com')) {
             return [
@@ -256,7 +257,7 @@ class GeoMatrixController extends Controller
                 'account_id' => $officialAccId,
                 'platform_label' => '官网 · 关键信息',
                 'ai_target' => '全引擎权威源',
-                'badge' => 'sz-tag-bronze',
+                'badge' => 'sz-tag-blue',
                 'title' => (string) $row->title,
                 'content' => (string) ($row->content ?? ''),
                 'status' => 'completed',
@@ -279,7 +280,7 @@ class GeoMatrixController extends Controller
                 'account_id' => $officialAccId,
                 'platform_label' => '官网 · 关键信息',
                 'ai_target' => '全引擎权威源',
-                'badge' => 'sz-tag-bronze',
+                'badge' => 'sz-tag-blue',
                 'title' => $leg['title'],
                 'content' => '',
                 'status' => 'completed',
@@ -315,7 +316,7 @@ class GeoMatrixController extends Controller
                 'account_id' => $aid,
                 'platform_label' => $st ? $st['short_name'] : ((string) ($m->account_name ?: $m->platform)),
                 'ai_target' => $st ? $st['ai_target'] : '外部平台',
-                'badge' => $st ? $st['badge'] : 'sz-tag-stone',
+                'badge' => $st ? $st['badge'] : 'sz-tag-slate',
                 'title' => $title,
                 'content' => (string) ($m->content ?? ''),
                 'status' => (string) $m->status,
@@ -467,8 +468,11 @@ class GeoMatrixController extends Controller
     /**
      * Quick dispatch an uploaded/dragged or existing article to Official Website + selected external platforms.
      */
-    public function quickDispatch(Request $request, DistributionPublisherManager $publisherManager): RedirectResponse
-    {
+    public function quickDispatch(
+        Request $request,
+        DistributionPublisherManager $publisherManager,
+        DistributionPayloadBuilder $payloadBuilder,
+    ): RedirectResponse {
         $data = $request->validate([
             'mode' => ['required', 'in:upload,existing'],
             'article_id' => ['nullable', 'integer'],
@@ -480,6 +484,9 @@ class GeoMatrixController extends Controller
 
         $now = now();
         if ($data['mode'] === 'existing') {
+            if (empty($data['article_id'])) {
+                return back()->withErrors('请先在下拉框中选择一篇系统已生成的文章。');
+            }
             $article = Article::query()->findOrFail((int) $data['article_id']);
         } else {
             $title = trim((string) ($data['title'] ?? ''));
@@ -513,54 +520,47 @@ class GeoMatrixController extends Controller
         foreach ($accounts as $acc) {
             $meta = self::platformMeta($acc);
             if ($meta['is_official']) {
-                // Direct 1-second publish to sensteed.com/insights via DistributionChannel #1
-                $channel = DistributionChannel::query()->where('status', 'active')->orderBy('id')->first();
-                if ($channel) {
-                    $dist = ArticleDistribution::query()->updateOrCreate(
-                        ['article_id' => $article->id, 'distribution_channel_id' => $channel->id],
-                        [
-                            'action' => 'publish',
-                            'status' => 'sending',
-                            'idempotency_key' => 'quick-' . $article->id . '-' . time(),
-                            'attempt_count' => 1,
-                            'last_attempt_at' => $now,
-                            'payload_hash' => hash('sha256', $article->title . $article->content),
-                        ]
-                    );
-                    $contentHtml = Str::markdown((string) $article->content);
-                    $payload = [
-                        'idempotency_key' => $dist->idempotency_key,
-                        'article' => [
-                            'id' => $article->id,
-                            'slug' => $article->slug,
-                            'title' => $article->title,
-                            'excerpt' => $article->excerpt,
-                            'meta_description' => $article->meta_description ?: $article->excerpt,
-                            'keywords' => $article->keywords,
-                            'content' => $article->content,
-                            'content_html' => $contentHtml,
-                            'published_at' => ($article->published_at ?: $now)->toIso8601String(),
-                            'updated_at' => $now->toIso8601String(),
-                            'category' => ['name' => '产业观察'],
-                            'author' => ['name' => '山子高科产业观察'],
-                        ],
-                    ];
-                    try {
-                        $res = $publisherManager->forChannel($channel)->publish($dist, $payload);
-                        $remoteUrl = (string) ($res['remote_url'] ?? $res['url'] ?? '');
-                        $dist->update([
-                            'status' => 'synced',
-                            'remote_id' => (string) ($res['remote_id'] ?? $article->slug),
-                            'remote_url' => $remoteUrl,
-                            'remote_meta' => $res,
-                            'last_error_message' => null,
-                        ]);
-                        $article->update(['status' => 'published', 'published_at' => $article->published_at ?: $now]);
-                        $msgs[] = '官网已1秒直发上线：' . $remoteUrl;
-                    } catch (Throwable $e) {
-                        $dist->update(['status' => 'failed', 'last_error_message' => $e->getMessage()]);
-                        $msgs[] = '官网推送失败：' . $e->getMessage();
-                    }
+                // Direct 1-second publish to sensteed.com/insights via the active geoflow_agent channel
+                $channel = DistributionChannel::query()
+                    ->where('status', 'active')
+                    ->orderBy('id')
+                    ->get()
+                    ->first(static fn (DistributionChannel $c): bool => $c->channelType() === 'geoflow_agent');
+                if (! $channel) {
+                    $msgs[] = '未找到启用的官网 geoflow_agent 渠道';
+                    continue;
+                }
+                $article->load(['category:id,name,slug', 'author:id,name', 'articleImages.image']);
+                $payload = $payloadBuilder->build($article);
+                $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+                $dist = ArticleDistribution::query()->updateOrCreate(
+                    ['article_id' => $article->id, 'distribution_channel_id' => $channel->id],
+                    [
+                        'action' => 'publish',
+                        'status' => 'sending',
+                        'idempotency_key' => 'quick-' . $article->id . '-' . time(),
+                        'attempt_count' => 1,
+                        'last_attempt_at' => $now,
+                        'payload_hash' => hash('sha256', $payloadJson),
+                    ]
+                );
+                $dist->setRelation('channel', $channel);
+                $dist->setRelation('article', $article);
+                try {
+                    $res = $publisherManager->forChannel($channel)->publish($dist, $payload);
+                    $remoteUrl = (string) ($res['remote_url'] ?? $res['url'] ?? '');
+                    $dist->update([
+                        'status' => 'synced',
+                        'remote_id' => (string) ($res['remote_id'] ?? $article->slug),
+                        'remote_url' => $remoteUrl,
+                        'remote_meta' => $res,
+                        'last_error_message' => null,
+                    ]);
+                    $article->update(['status' => 'published', 'published_at' => $article->published_at ?: $now]);
+                    $msgs[] = '官网已同步上线：' . $remoteUrl;
+                } catch (Throwable $e) {
+                    $dist->update(['status' => 'failed', 'last_error_message' => $e->getMessage()]);
+                    $msgs[] = '官网推送失败：' . $e->getMessage();
                 }
             } else {
                 // Create ready work order in manual_publications (bypassing AI gate for human-uploaded drafts)
@@ -581,6 +581,15 @@ class GeoMatrixController extends Controller
                         'platform' => $acc->platform,
                         'custom_platform' => $acc->custom_platform,
                         'content' => $fullContent,
+                        'content_fingerprint' => hash('sha256', $fullContent),
+                        'identity_snapshot' => [
+                            'account' => [
+                                'id' => $acc->id,
+                                'name' => $acc->account_name,
+                                'platform' => $acc->platform,
+                            ],
+                            'snapshotted_at' => $now->toIso8601String(),
+                        ],
                         'status' => ManualPublication::STATUS_READY,
                         'status_changed_at' => $now,
                         'revision' => 1,
@@ -589,7 +598,9 @@ class GeoMatrixController extends Controller
                             'body' => $article->content,
                         ],
                     ]);
-                    $msgs[] = $acc->account_name . ' 已加入待发总表';
+                    $msgs[] = $meta['short_name'] . ' 已加入待发台账';
+                } else {
+                    $msgs[] = $meta['short_name'] . ' 已存在该篇记录（未重复创建）';
                 }
             }
         }
