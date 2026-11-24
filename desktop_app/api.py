@@ -3,8 +3,10 @@ from __future__ import annotations
 import csv
 import datetime as dt
 import hashlib
+import hmac
 import io
 import json
+import os
 import pathlib
 import re
 import sys
@@ -236,6 +238,13 @@ class BrowserOpenRequest(BaseModel):
     account_id: int | None = None
 
 
+class DesktopDraftRequest(BaseModel):
+    target_id: str = Field(min_length=1, max_length=128)
+    url: str = Field(max_length=4096)
+    title: str = Field(min_length=1, max_length=512)
+    content: str = Field(min_length=1, max_length=120_000)
+
+
 class LedgerReceiptRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -248,6 +257,16 @@ class AssetTitleRequest(BaseModel):
 
     library_id: int = 1
     title: str
+
+
+class AssetTitleUpdateRequest(BaseModel):
+    title: str
+
+
+class ChannelRequest(BaseModel):
+    name: str = Field(max_length=80)
+    url: str = Field(max_length=2048)
+    notes: str = Field(default="", max_length=350)
 
 
 class AssetKeywordRequest(BaseModel):
@@ -372,6 +391,36 @@ def create_app(db_path: pathlib.Path | str | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="稿件不存在")
         return {"ok": True, "article": dict(row)}
 
+    @app.post("/api/channels", status_code=201)
+    async def api_add_channel(payload: ChannelRequest) -> dict[str, Any]:
+        name = payload.name.strip()
+        url = payload.url.strip()
+        try:
+            parts = urllib.parse.urlsplit(url)
+            valid_url = (
+                parts.scheme in ("http", "https") and parts.hostname
+                and parts.username is None and parts.password is None
+                and not any(char.isspace() or char == "\\" for char in url)
+            )
+            parts.port
+        except ValueError:
+            valid_url = False
+        if not name or not valid_url:
+            raise HTTPException(status_code=400, detail="请填写渠道名称和有效的 HTTP 或 HTTPS 地址")
+        with db.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            existing = conn.execute(
+                "SELECT id FROM accounts WHERE is_active=1 AND account_name=? AND profile_url=?",
+                (name, url),
+            ).fetchone()
+            if existing:
+                raise HTTPException(status_code=409, detail="这个发布渠道已存在")
+            inserted = conn.execute(
+                "INSERT INTO accounts (account_name, platform, profile_url, notes, is_active) VALUES (?, 'manual', ?, ?, 1)",
+                (name, url, payload.notes.strip()),
+            )
+        return {"ok": True, "id": inserted.lastrowid}
+
     @app.post("/api/ai/generate")
     async def api_ai_generate(payload: GenerateArticleRequest) -> dict[str, Any]:
         topic = (payload.topic_title or payload.title or payload.topic).strip()
@@ -485,6 +534,8 @@ def create_app(db_path: pathlib.Path | str | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="所选发布阵地不存在")
 
         external_action = payload.external_action if payload.external_action in ("draft", "publish", "ledger_only") else "draft"
+        if os.environ.get("SHANZIGEO_NATIVE_TOKEN"):
+            external_action = "ledger_only"
         msgs: list[str] = []
         results: list[dict[str, Any]] = []
 
@@ -603,7 +654,7 @@ def create_app(db_path: pathlib.Path | str | None = None) -> FastAPI:
                     current_status = "ready"
                     current_url = ""
 
-            if external_action == "ledger_only":
+            if external_action == "ledger_only" or acc["platform"] == "manual":
                 msg = f"{short_name}已记入待发工单台账"
                 msgs.append(msg)
                 results.append(
@@ -670,12 +721,7 @@ def create_app(db_path: pathlib.Path | str | None = None) -> FastAPI:
             "results": results,
         }
 
-    @app.post("/api/browser/open")
-    async def api_browser_open(payload: BrowserOpenRequest | None = Body(default=None)) -> dict[str, Any]:
-        settings = load_settings()
-        browser_engine.cdp_port = int(settings.get("cdp_port") or 9233)
-
-        req = payload or BrowserOpenRequest()
+    def browser_target(req: BrowserOpenRequest) -> str:
         target_url = (req.url or "").strip()
         if target_url == "#":
             target_url = ""
@@ -701,6 +747,22 @@ def create_app(db_path: pathlib.Path | str | None = None) -> FastAPI:
                     if plat_key.upper() == meta["code"] or plat_lower == meta["hub_key"] or plat_key in meta["short_name"]:
                         target_url = meta["editor_url"]
                         break
+        return target_url
+
+    @app.post("/api/desktop/draft")
+    async def api_desktop_draft(req: Request, draft: DesktopDraftRequest) -> dict[str, Any]:
+        token = os.environ.get("SHANZIGEO_NATIVE_TOKEN")
+        if not token or not hmac.compare_digest(req.headers.get("x-shanzigeo-native", ""), token):
+            raise HTTPException(status_code=404, detail="桌面填稿入口不可用")
+        port = int(os.environ.get("SHANZIGEO_NATIVE_CDP_PORT", "0"))
+        if not 1 <= port <= 65535:
+            raise HTTPException(status_code=503, detail="右栏尚未连接")
+        return await browser_engine.fill_desktop_draft(port, draft.target_id, draft.url, draft.title, draft.content)
+
+    @app.post("/api/browser/open")
+    async def api_browser_open(payload: BrowserOpenRequest | None = Body(default=None)) -> dict[str, Any]:
+        browser_engine.cdp_port = int(load_settings().get("cdp_port") or 9233)
+        target_url = browser_target(payload or BrowserOpenRequest())
 
         if target_url and target_url != "#":
             return await browser_engine.open_url(target_url)
@@ -772,6 +834,17 @@ def create_app(db_path: pathlib.Path | str | None = None) -> FastAPI:
                 cur = conn.execute("INSERT INTO titles (library_id, title) VALUES (?, ?)", (lib_id, t))
                 inserted_ids.append(int(cur.lastrowid))
         return {"ok": True, "id": inserted_ids[0], "ids": inserted_ids, "added": len(inserted_ids)}
+
+    @app.put("/api/assets/title/{item_id}")
+    async def api_update_title(item_id: int, payload: AssetTitleUpdateRequest) -> dict[str, Any]:
+        title = payload.title.strip()
+        if not title or "\n" in title or "\r" in title:
+            raise HTTPException(status_code=400, detail="请输入一行母题标题")
+        with db.connect() as conn:
+            result = conn.execute("UPDATE titles SET title=? WHERE id=?", (title, item_id))
+            if not result.rowcount:
+                raise HTTPException(status_code=404, detail="该母题已不存在")
+        return {"ok": True}
 
     @app.delete("/api/assets/title/{item_id}")
     async def api_delete_title(item_id: int) -> dict[str, Any]:

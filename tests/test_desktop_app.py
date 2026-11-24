@@ -2,14 +2,70 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 import os
+from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi.testclient import TestClient
 
 from desktop_app.api import create_app
+from desktop_app.main import _launch_workbench_window, _wait_for_relaunched_edge
+
+
+class DesktopWindowLaunchTests(unittest.TestCase):
+    def test_each_workbench_window_has_its_own_edge_profile(self) -> None:
+        urls = ["http://127.0.0.1:50100", "http://127.0.0.1:50101"]
+        profiles = []
+
+        def start_browser(args, **_kwargs):
+            profile_option = next(arg for arg in args if arg.startswith("--user-data-dir="))
+            profile = Path(profile_option.split("=", 1)[1])
+            self.assertTrue(profile.is_dir())
+            self.assertIn(f"--app={urls[len(profiles)]}", args)
+            profiles.append(profile)
+            return Mock(wait=Mock(return_value=0))
+
+        with (
+            patch("desktop_app.main._find_workbench_edge", return_value=Path(__file__)),
+            patch("desktop_app.main.subprocess.Popen", side_effect=start_browser),
+            patch("desktop_app.main._wait_for_relaunched_edge", return_value=0) as wait_for_edge,
+            patch("desktop_app.main.webbrowser.open") as default_browser,
+        ):
+            for url in urls:
+                self.assertTrue(_launch_workbench_window(url, Mock(), logging.getLogger(__name__)))
+
+        self.assertEqual(len(set(profiles)), len(urls))
+        self.assertTrue(all(not profile.exists() for profile in profiles))
+        self.assertEqual([call.args[0] for call in wait_for_edge.call_args_list], list(map(str, profiles)))
+        default_browser.assert_not_called()
+
+    def test_edge_relaunch_waits_for_the_matching_profile_window(self) -> None:
+        profile = r"C:\Temp\workbench-profile"
+        args = ["msedge.exe", f"--user-data-dir={profile}", "--app=http://127.0.0.1:50100"]
+        regular_browser = Mock(info={"name": "msedge.exe"}, cmdline=Mock(return_value=["msedge.exe"]))
+        workbench = Mock(info={"name": "msedge.exe"}, cmdline=Mock(return_value=args), wait=Mock(return_value=0))
+        with patch("desktop_app.main.psutil.process_iter", return_value=[regular_browser, workbench]):
+            self.assertEqual(_wait_for_relaunched_edge(profile), 0)
+        regular_browser.wait.assert_not_called()
+        workbench.wait.assert_called_once_with()
+
+    def test_edge_failure_opens_default_browser_and_keeps_server_alive(self) -> None:
+        url = "http://127.0.0.1:50100"
+        server_thread = Mock(is_alive=Mock(side_effect=[True, False]))
+        with (
+            patch("desktop_app.main._find_workbench_edge", return_value=Path(__file__)),
+            patch("desktop_app.main.subprocess.Popen", return_value=Mock(wait=Mock(return_value=1))),
+            patch("desktop_app.main.webbrowser.open", return_value=True) as default_browser,
+            self.assertLogs(logger=__name__, level="ERROR") as log,
+        ):
+            self.assertTrue(_launch_workbench_window(url, server_thread, logging.getLogger(__name__)))
+
+        self.assertIn("Edge workbench window exited with code 1", log.output[0])
+        default_browser.assert_called_once_with(url)
+        server_thread.join.assert_called_once_with(timeout=1.0)
 
 
 class DesktopAppApiTests(unittest.TestCase):
@@ -104,7 +160,7 @@ class DesktopAppApiTests(unittest.TestCase):
         self.assertEqual(reader[1][0], "1")
 
     def test_assets_title_keyword_and_kb_crud(self) -> None:
-        # 1. Title add & delete
+        # 1. Title add, edit & delete
         r_add_t = self.client.post(
             "/api/assets/title",
             json={"library_id": 1, "title": "山子高科2026年先进封装材料业务进展深度拆解"},
@@ -114,6 +170,13 @@ class DesktopAppApiTests(unittest.TestCase):
 
         st1 = self.client.get("/api/state").json()
         self.assertEqual(len(st1["titles"]), 37)
+
+        revised_title = "山子高科先进封装材料业务进展"
+        r_put_t = self.client.put(f"/api/assets/title/{t_id}", json={"title": revised_title})
+        self.assertEqual(r_put_t.status_code, 200)
+        edited = next(t for t in self.client.get("/api/state").json()["titles"] if t["id"] == t_id)
+        self.assertEqual(edited["title"], revised_title)
+        self.assertEqual(edited["library_id"], 1)
 
         r_del_t = self.client.delete(f"/api/assets/title/{t_id}")
         self.assertEqual(r_del_t.status_code, 200)
@@ -146,6 +209,27 @@ class DesktopAppApiTests(unittest.TestCase):
         kbs = {kb["id"]: kb for kb in self.client.get("/api/state").json()["knowledge_bases"]}
         self.assertEqual(kbs[1]["name"], "山子高科核心事实库（人工修订版）")
         self.assertIn("邦奇动力与艾尔希ARC", kbs[1]["content"])
+
+    def test_manual_channel_is_available_for_dispatch_without_automatic_publish(self) -> None:
+        channel = {"name": "官网合作方", "url": "https://example.org/editor", "notes": "编辑后台"}
+        bad_url = self.client.post("/api/channels", json={**channel, "url": "javascript:alert(1)"})
+        self.assertEqual(bad_url.status_code, 400)
+        first = self.client.post("/api/channels", json=channel)
+        self.assertEqual(first.status_code, 201)
+        account_id = first.json()["id"]
+        self.assertEqual(self.client.post("/api/channels", json=channel).status_code, 409)
+        current = self.client.get("/api/state").json()
+        platform = next(p for p in current["platforms"] if p["id"] == account_id)
+        self.assertFalse(platform["is_official"])
+        self.assertEqual(platform["editor_url"], channel["url"])
+        existing = current["articles"][0]["id"]
+        response = self.client.post("/api/dispatch", json={
+            "mode": "existing", "article_id": existing, "account_ids": [account_id], "external_action": "publish",
+        })
+        self.assertEqual(response.status_code, 200)
+        row = next(r for r in self.client.get("/api/state").json()["ledger"] if r["account_id"] == account_id)
+        self.assertEqual(row["status"], "ready")
+        self.assertFalse(row["url"])
 
     def test_receipt_saving_and_baseline_scorecard_recording(self) -> None:
         state0 = self.client.get("/api/state").json()

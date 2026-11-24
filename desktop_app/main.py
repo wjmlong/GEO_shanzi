@@ -10,6 +10,7 @@ import pathlib
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from typing import Any
@@ -21,6 +22,7 @@ if __package__ in (None, "") and not getattr(sys, "frozen", False):
         sys.path.insert(0, _project_root)
 
 import httpx
+import psutil
 import uvicorn
 
 from desktop_app.api import create_app
@@ -225,38 +227,83 @@ def _emit_json(payload: dict[str, Any]) -> None:
         sys.stdout.flush()
 
 
-def _launch_chromium_app_fallback(url: str, logger: logging.Logger) -> None:
-    chrome_bin = find_portable_chromium()
-    if chrome_bin and chrome_bin.exists():
-        shell_profile = data_dir() / "app-shell-profile"
-        shell_profile.mkdir(parents=True, exist_ok=True)
-        for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
-            lp = shell_profile / lock_name
-            if lp.exists():
-                try:
-                    lp.unlink()
-                except OSError:
-                    pass
-        args = [
-            str(chrome_bin),
-            f"--app={url}",
-            f"--user-data-dir={shell_profile}",
-            "--window-size=1420,900",
-            "--no-first-run",
-            "--no-default-browser-check",
-        ]
-        logger.info("Launching portable Chromium desktop window: %s -> %s", chrome_bin, url)
-        proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        proc.wait()
-        return
+def _find_workbench_edge() -> pathlib.Path | None:
+    if sys.platform != "win32":
+        return None
+    for key in ("ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA"):
+        root = os.environ.get(key)
+        if root:
+            edge = pathlib.Path(root) / "Microsoft" / "Edge" / "Application" / "msedge.exe"
+            if edge.is_file():
+                return edge
+    return None
 
-    logger.warning("Portable Chromium not found; opening default system browser for %s", url)
-    webbrowser.open(url)
+
+def _wait_for_relaunched_edge(profile: str) -> int:
+    # Edge can restart itself through its Windows compatibility launcher. Its
+    # first process then exits successfully even though the new window is open.
+    profile_arg = f"--user-data-dir={profile}".casefold()
+    deadline = time.monotonic() + 4
+    while time.monotonic() < deadline:
+        for candidate in psutil.process_iter(["name"]):
+            if (candidate.info["name"] or "").casefold() != "msedge.exe":
+                continue
+            try:
+                args = [arg.casefold() for arg in candidate.cmdline()]
+                if profile_arg in args and any(arg.startswith("--app=") for arg in args):
+                    return candidate.wait() or 0
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        time.sleep(0.15)
+    return 0
+
+
+def _launch_workbench_window(url: str, server_thread: threading.Thread, logger: logging.Logger) -> bool:
+    edge = _find_workbench_edge()
+    if edge:
+        try:
+            # The bundled Chrome for Testing is for platform automation. Use the
+            # installed Edge to render the workbench in a separate app window.
+            with tempfile.TemporaryDirectory(prefix="shanzigeo-window-", ignore_cleanup_errors=True) as profile:
+                args = [
+                    str(edge),
+                    f"--app={url}",
+                    f"--user-data-dir={profile}",
+                    "--window-size=1420,900",
+                    "--no-first-run",
+                    "--no-default-browser-check",
+                ]
+                startupinfo = None
+                if sys.platform == "win32":
+                    startupinfo = subprocess.STARTUPINFO()
+                    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                    startupinfo.wShowWindow = 1  # SW_SHOWNORMAL
+
+                logger.info("Launching Edge workbench window: %s -> %s", edge, url)
+                with tempfile.TemporaryFile() as browser_errors:
+                    proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=browser_errors, startupinfo=startupinfo)
+                    exit_code = proc.wait()
+                    if exit_code == 0:
+                        exit_code = _wait_for_relaunched_edge(profile)
+                        if exit_code == 0:
+                            return True
+                    size = browser_errors.seek(0, os.SEEK_END)
+                    browser_errors.seek(max(0, size - 4096))
+                    details = browser_errors.read().decode("utf-8", errors="replace").strip()
+                    logger.error("Edge workbench window exited with code %s: %s", exit_code, details)
+        except OSError:
+            logger.exception("Could not launch the Edge workbench window")
+
+    logger.warning("Opening the workbench in the default browser: %s", url)
+    if not webbrowser.open(url):
+        logger.error("Could not open the workbench in the default browser")
+        return False
     try:
-        while True:
-            time.sleep(1.0)
+        while server_thread.is_alive():
+            server_thread.join(timeout=1.0)
     except KeyboardInterrupt:
         pass
+    return True
 
 
 def run_desktop_app(port_override: int = 0, serve_only: bool = False) -> int:
@@ -292,16 +339,11 @@ def run_desktop_app(port_override: int = 0, serve_only: bool = False) -> int:
         return 0
 
     try:
-        # Primary window shell: bundled portable Chromium in native borderless --app window mode
-        # (avoids pythonnet/.NET CLR native crashes in frozen Windows builds and guarantees
-        # hardware-accelerated backdrop-filter Liquid Glass rendering on every PC).
-        _launch_chromium_app_fallback(url, logger)
+        return 0 if _launch_workbench_window(url, thread, logger) else 1
     finally:
         logger.info("Shutting down local FastAPI server")
         server.should_exit = True
         thread.join(timeout=3.0)
-
-    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

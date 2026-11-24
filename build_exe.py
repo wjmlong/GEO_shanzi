@@ -34,7 +34,7 @@ def verify_prerequisites() -> None:
         raise FileNotFoundError(f"Cannot build ShanziGEO.exe; missing or empty required files: {missing}")
 
 
-def build_to_staging() -> pathlib.Path:
+def build_to_staging(*, electron_backend: bool = False) -> pathlib.Path:
     staged_app = STAGE_DIST_DIR / "ShanziGEO"
     if staged_app.exists():
         shutil.rmtree(staged_app)
@@ -76,8 +76,6 @@ def build_to_staging() -> pathlib.Path:
         f"{ROOT / 'geo' / 'baseline_10q.yaml'}{sep}geo",
         "--collect-all",
         "playwright",
-        "--collect-all",
-        "webview",
         "--collect-data",
         "certifi",
         "--hidden-import",
@@ -102,6 +100,11 @@ def build_to_staging() -> pathlib.Path:
         "markdown.extensions.fenced_code",
         str(entry_script),
     ]
+    if electron_backend:
+        for module in ("webview", "numpy", "matplotlib", "IPython", "pytest", "PIL", "tkinter", "pythonnet"):
+            cmd[-1:-1] = ["--exclude-module", module]
+    else:
+        cmd[-1:-1] = ["--collect-all", "webview"]
 
     print("[build_exe] Running PyInstaller into staging folder...")
     subprocess.run(cmd, cwd=str(ROOT), check=True)

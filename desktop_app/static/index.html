@@ -7,20 +7,20 @@
   <title>山子高科 · GEO 智能工作台</title>
   <style>
     :root {
-      --canvas-bg: linear-gradient(145deg, #F3F6FA 0%, #FAFBFC 55%, #F6F4F6 100%);
-      --glass-bg: rgba(255, 255, 255, 0.76);
-      --glass-bg-strong: rgba(255, 255, 255, 0.88);
-      --glass-bg-soft: rgba(255, 255, 255, 0.48);
-      --glass-border: rgba(255, 255, 255, 0.92);
-      --glass-hairline: rgba(203, 213, 225, 0.62);
-      --glass-shadow: 0 10px 32px rgba(15, 23, 42, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-      --glass-shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.032), inset 0 1px 0 rgba(255, 255, 255, 0.92);
-      --radius-lg: 18px;
-      --radius-md: 13px;
-      --radius-sm: 10px;
+      --canvas-bg: #f6f5f3;
+      --glass-bg: #fff;
+      --glass-bg-strong: #fff;
+      --glass-bg-soft: #faf9f7;
+      --glass-border: #e5e1dd;
+      --glass-hairline: #dfdad6;
+      --glass-shadow: none;
+      --glass-shadow-sm: none;
+      --radius-lg: 10px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
 
-      --shanzi-red: #D92D20;
-      --shanzi-red-hover: #B91C1C;
+      --shanzi-red: #a92a35;
+      --shanzi-red-hover: #90222c;
       --shanzi-red-soft: rgba(217, 45, 32, 0.08);
       --shanzi-red-text: #C81E1E;
       --shanzi-red-border: rgba(217, 45, 32, 0.18);
@@ -32,7 +32,7 @@
       --ink-400: #94A3B8;
 
       --mist-pill: rgba(241, 245, 249, 0.85);
-      --mist-capsule-active: linear-gradient(180deg, rgba(226, 236, 246, 0.95) 0%, rgba(218, 230, 243, 0.88) 100%);
+      --mist-capsule-active: #f4e9e7;
       --jade-dot: #10B981;
       --jade-soft: rgba(16, 185, 129, 0.08);
       --jade-text: #047857;
@@ -132,17 +132,15 @@
       position: relative;
       z-index: 1;
       display: grid;
-      grid-template-columns: 248px minmax(0, 1fr);
-      gap: 14px;
+      grid-template-columns: 204px minmax(0, 1fr);
+      gap: 16px;
       width: 100%;
       height: calc(100vh - 30px);
-      padding: 12px 16px 10px 14px;
+      padding: 14px 18px 12px;
     }
 
     .glass-panel {
       background: var(--glass-bg);
-      backdrop-filter: blur(24px) saturate(165%);
-      -webkit-backdrop-filter: blur(24px) saturate(165%);
       border: 1px solid var(--glass-border);
       box-shadow: var(--glass-shadow);
       border-radius: var(--radius-lg);
@@ -157,7 +155,7 @@
 
     /* Left Floating Frosted Sidebar (248px, Haoshi desktop style) */
     .sidebar {
-      width: 248px;
+      width: 204px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -1529,11 +1527,9 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="/static/browser-panel.css" />
 </head>
 <body>
-  <div class="ambient-canvas"></div>
-  <img src="/assets/crystal_horse_bg.png" alt="" class="crystal-horse-bg" onerror="this.style.display='none'" />
-
   <div class="toast-stack" id="toastStack"></div>
 
   <div class="app-shell">
@@ -1546,7 +1542,6 @@
           </div>
           <span class="brand-title">山子高科 · GEO</span>
         </div>
-        <span class="stock-pill num">000981</span>
       </div>
 
       <!-- Primary Navigation Island -->
@@ -1555,7 +1550,7 @@
           <svg class="svg-icon svg-icon-lg plus-icon" viewBox="0 0 24 24">
             <path d="M12 5v14M5 12h14"></path>
           </svg>
-          <span>创作与质检派发</span>
+          <span>写稿与发布</span>
         </button>
 
         <button type="button" class="nav-item" data-view="ledger" onclick="switchView('ledger')">
@@ -1564,7 +1559,7 @@
               <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
               <path d="M3 10h18M9 10v10"></path>
             </svg>
-            <span>全平台发稿台账</span>
+            <span>发稿台账</span>
           </span>
           <span class="nav-count num" id="navLedgerCount">0</span>
         </button>
@@ -1577,7 +1572,7 @@
               <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
               <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
             </svg>
-            <span>九大发布阵地</span>
+            <span>发布渠道</span>
           </span>
           <span class="nav-count num" id="navMatrixCount">9</span>
         </button>
@@ -1587,7 +1582,17 @@
             <svg class="svg-icon" viewBox="0 0 24 24">
               <path d="M18 20V10M12 20V4M6 20v-6"></path>
             </svg>
-            <span>AI 可见性成绩单</span>
+            <span>AI 可见性</span>
+          </span>
+        </button>
+
+        <button type="button" class="nav-item desktop-studio-only" data-view="video" onclick="switchView('video')">
+          <span class="nav-item-left">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+              <path d="m10 9 5 3-5 3z"></path>
+            </svg>
+            <span>短视频工作台</span>
           </span>
         </button>
 
@@ -1597,33 +1602,27 @@
               <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
               <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
             </svg>
-            <span>资产库与配置</span>
+            <span>资料与设置</span>
           </span>
         </button>
       </nav>
 
       <!-- Recent Ledger Pulse Island -->
-      <div class="sidebar-feed-card">
-        <div class="feed-header">
+      <details class="sidebar-feed-card">
+        <summary class="feed-header">
           <span>近期台账动态</span>
           <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
             <path d="M6 9l6 6 6-6"></path>
           </svg>
-        </div>
+        </summary>
         <div class="feed-list" id="sidebarFeedList">
           <div class="feed-group-label">同步加载中</div>
         </div>
-      </div>
+      </details>
 
       <!-- Bottom Quick Action Dock -->
       <div class="glass-panel sidebar-dock">
         <div class="dock-tools-row">
-          <button type="button" class="dock-icon-btn" title="启动内置便携浏览器" onclick="openPortableBrowser({})">
-            <svg class="svg-icon" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="M3.6 9h16.8M3.6 15h16.8M12 3a14.5 14.5 0 0 0 0 18M12 3a14.5 14.5 0 0 1 0 18"></path>
-            </svg>
-          </button>
           <button type="button" class="dock-icon-btn" title="测试官网直发接口" onclick="testOfficialHealth()">
             <svg class="svg-icon" viewBox="0 0 24 24">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -1650,12 +1649,9 @@
           </button>
         </div>
 
-        <button type="button" class="browser-launch-pill" onclick="openPortableBrowser({})">
+        <button type="button" id="sidebarBrowserButton" class="browser-launch-pill" aria-controls="browserPanel" aria-expanded="false" onclick="openPortableBrowser({})">
           <span class="browser-pill-left">
-            <span class="pony-avatar-xs">
-              <img src="/assets/pony_avatar.png" alt="" onerror="this.style.display='none'" />
-            </span>
-            <span>内置登录浏览器</span>
+            <span>登录浏览器</span>
           </span>
           <span class="mini-status-tag" id="sidebarBrowserBadge">待启动</span>
         </button>
@@ -1666,25 +1662,24 @@
     <main class="main-stage">
       <header class="stage-topbar">
         <div class="topbar-title-capsule">
-          <span class="topbar-view-name" id="stageViewTitle">创作与质检派发</span>
-          <span class="topbar-divider"></span>
-          <span class="topbar-view-sub" id="stageViewSub">官方事实库锚定生成 · 4维信披合规评审 · 官网1秒静态化与便携内核0 Token填稿</span>
+          <h1 class="topbar-view-name" id="stageViewTitle">写稿与发布</h1>
         </div>
 
         <div class="topbar-actions">
-          <button type="button" class="capsule-btn" onclick="loadState(true)">
+          <button type="button" class="capsule-btn" id="refreshGeoData" onclick="loadState(true)">
             <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
               <path d="M23 4v6h-6M1 20v-6h6"></path>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
             <span>刷新数据</span>
           </button>
-          <button type="button" class="capsule-btn" onclick="switchView('assets', 'settings')">
+          <button type="button" class="capsule-btn desktop-studio-only" id="stopVideoStudio" hidden>关闭工作台</button>
+          <button type="button" id="topBrowserButton" class="capsule-btn browser-top-button" aria-controls="browserPanel" aria-expanded="false" onclick="openPortableBrowser({})">
             <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
+              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+              <path d="M15 5v14"></path>
             </svg>
-            <span>山子高科 · 信披工作台</span>
+            <span>登录浏览器</span>
           </button>
         </div>
       </header>
@@ -1694,20 +1689,7 @@
              VIEW 1: 创作与质检派发
              ======================================================= -->
         <section class="view-section active" id="view-compose">
-          <div class="hero-strip">
-            <div class="glass-panel hero-brand-card">
-              <div class="pony-avatar-hero">
-                <img src="/assets/pony_avatar.png" alt="山子高科小马" onerror="this.style.display='none'" />
-              </div>
-              <div class="hero-copy">
-                <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
-                  <h1>好事 · 标准答案中枢</h1>
-                  <span class="pill pill-red">官方权威口径</span>
-                </div>
-                <p>覆盖邦奇动力、艾尔希 ARC 与半导体材料三大事实基准，杜绝违规表述与过时称谓。</p>
-              </div>
-            </div>
-
+          <div>
             <div class="kpi-grid-4">
               <div class="glass-panel kpi-card">
                 <div class="kpi-top">
@@ -1718,12 +1700,11 @@
                   </svg>
                 </div>
                 <div class="kpi-val num" id="kpiPublished">0</div>
-                <div class="kpi-sub">全网真实可检索 URL</div>
               </div>
 
               <div class="glass-panel kpi-card">
                 <div class="kpi-top">
-                  <span>待发外网工单</span>
+                  <span>待发工单</span>
                   <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="9"></circle>
                     <path d="M12 7v5l3 3"></path>
@@ -1735,7 +1716,7 @@
 
               <div class="glass-panel kpi-card">
                 <div class="kpi-top">
-                  <span>AI 翻牌 / 引用</span>
+                  <span>AI 引用</span>
                   <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
                     <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"></path>
                   </svg>
@@ -1746,7 +1727,7 @@
 
               <div class="glass-panel kpi-card">
                 <div class="kpi-top">
-                  <span>链接被翻牌率</span>
+                  <span>链接引用率</span>
                   <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
                     <path d="M23 6l-9.5 9.5-5-5L1 18"></path>
                     <path d="M17 6h6v6"></path>
@@ -1767,14 +1748,14 @@
                     <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
                       <path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"></path>
                     </svg>
-                    <span>AI 标准答案写稿</span>
+                  <span>AI 写稿</span>
                   </button>
                   <button type="button" class="seg-btn" id="modeBtnUpload" onclick="setComposeMode('upload')">
                     <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                       <path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"></path>
                     </svg>
-                    <span>自写稿拖入质检</span>
+                  <span>导入稿件</span>
                   </button>
                   <button type="button" class="seg-btn" id="modeBtnExisting" onclick="setComposeMode('existing')">
                     <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
@@ -1784,14 +1765,17 @@
                     <span>选已存稿件</span>
                   </button>
                 </div>
-                <span class="pill pill-mist" id="dispatchSourceBadge">当前模式：新稿入库</span>
+                <span class="pill pill-mist" id="dispatchSourceBadge" hidden>当前模式：新稿入库</span>
               </div>
 
               <!-- Mode A: AI Standard Writer -->
               <div class="ai-writer-box" id="panelModeAi">
                 <div class="ai-row-2">
                   <div>
-                    <label class="field-label" for="topicSelect36">从 36 标准母题库选定命题</label>
+                    <div class="topic-picker-heading">
+                      <label class="field-label" for="topicSelect36">从母题库选题</label>
+                      <button type="button" class="btn btn-glass btn-xs" onclick="openTopicLibrary()">查看母题库</button>
+                    </div>
                     <select id="topicSelect36" class="select" onchange="onPickTopicDropdown()">
                       <option value="">-- 选择官方标准母题（自动填入右侧命题框） --</option>
                     </select>
@@ -1811,7 +1795,7 @@
                     <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
                       <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"></path>
                     </svg>
-                    <span>生成标准答案初稿</span>
+                  <span>生成初稿</span>
                   </button>
                 </div>
               </div>
@@ -1838,11 +1822,9 @@
                     </svg>
                   </div>
                   <div class="dropzone-text">
-                    <strong>拖入本地 .md / .txt 稿件，或点击选择文件导入</strong>
-                    <span>自动识别首行 Markdown 标题与正文结构，支持信披合规质检</span>
+                    <strong>拖入或选择 .md / .txt 稿件</strong>
                   </div>
                 </div>
-                <span class="pill pill-mist">UTF-8 解析</span>
               </div>
 
               <!-- Unified Title & Body Editor -->
@@ -1851,7 +1833,7 @@
                   <label class="field-label" for="composeTitle" style="margin:0;">文章标题</label>
                   <span class="num" id="titleCharCount">0 字（头条建议 ≤30 字）</span>
                 </div>
-                <input id="composeTitle" type="text" class="input" placeholder="请输入文章标题，例如：山子高科(000981.SZ)汽车零部件主业深度拆解：邦奇动力与艾尔希ARC全球化底座" oninput="onEditorManualChange()" />
+                <input id="composeTitle" type="text" class="input" placeholder="输入文章标题" oninput="onEditorManualChange()" />
               </div>
 
               <div>
@@ -1859,13 +1841,14 @@
                   <label class="field-label" for="composeContent" style="margin:0;">Markdown 正文内容</label>
                   <span class="num" id="bodyCharCount">0 字</span>
                 </div>
-                <textarea id="composeContent" class="textarea" rows="8" placeholder="在此输入或由 AI 生成 Markdown 标准答案正文。所有财务与业务数据须注明对应定期报告或临时公告编号..." oninput="onEditorManualChange()"></textarea>
+                <textarea id="composeContent" class="textarea" rows="8" placeholder="输入或生成正文" oninput="onEditorManualChange()"></textarea>
               </div>
 
               <div class="editor-footer">
                 <div style="display:flex;gap:6px;">
                   <button type="button" class="btn btn-glass btn-sm" onclick="fillSampleDraft()">填入合规示例稿</button>
                   <button type="button" class="btn btn-glass btn-sm" onclick="clearEditor()">清空</button>
+                  <button type="button" class="btn btn-glass btn-sm desktop-studio-only" id="sendVideoDraft">转为视频素材</button>
                 </div>
                 <button type="button" class="btn btn-primary" id="btnInspect" onclick="handleAiInspect()">
                   <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
@@ -1934,7 +1917,7 @@
                       <path d="M22 2L11 13"></path>
                       <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
                     </svg>
-                    <span>九大阵地多选派发</span>
+                    <span>发布渠道</span>
                   </div>
                   <div style="display:flex;gap:6px;">
                     <button type="button" class="btn btn-glass btn-xs" onclick="selectCorePlatforms()">选核心4渠</button>
@@ -1970,18 +1953,18 @@
              VIEW 2: 全平台发稿台账
              ======================================================= -->
         <section class="view-section" id="view-ledger">
-          <div class="glass-panel studio-card">
-            <div class="toolbar-row">
+          <div class="glass-panel studio-card ledger-panel">
+            <div class="toolbar-row ledger-toolbar">
               <div class="toolbar-filters">
-                <select id="ledgerPlatformFilter" class="select" style="width:190px;" onchange="renderLedgerTable()">
-                  <option value="">全部发布平台（CH-01~09）</option>
+                <select id="ledgerPlatformFilter" class="select" aria-label="发布平台" onchange="renderLedgerTable()">
+                  <option value="">全部平台</option>
                 </select>
-                <select id="ledgerStatusFilter" class="select" style="width:165px;" onchange="renderLedgerTable()">
+                <select id="ledgerStatusFilter" class="select" aria-label="发布状态" onchange="renderLedgerTable()">
                   <option value="">全部状态</option>
                   <option value="completed">已上线（有真实链接）</option>
                   <option value="pending">待发 / 草稿填报中</option>
                 </select>
-                <input id="ledgerSearchInput" type="text" class="input" style="width:240px;" placeholder="检索标题、平台或真实 URL..." oninput="renderLedgerTable()" />
+                <input id="ledgerSearchInput" type="search" class="input" aria-label="检索台账" placeholder="搜索标题、平台或链接" oninput="renderLedgerTable()" />
               </div>
 
               <div style="display:flex;align-items:center;gap:8px;">
@@ -1991,27 +1974,38 @@
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <path d="M7 10l5 5 5-5M12 15V3"></path>
                   </svg>
-                  <span>导出 Excel (.csv)</span>
+                  <span>导出 CSV</span>
                 </button>
               </div>
             </div>
 
             <div class="table-wrap">
-              <table class="glass-table">
+              <table class="glass-table ledger-table">
                 <thead>
                   <tr>
-                    <th style="width:52px;">#</th>
-                    <th style="width:146px;">发布平台</th>
-                    <th>文章标题与快捷操作</th>
-                    <th style="width:94px;">状态</th>
-                    <th style="width:268px;">线上真实链接</th>
-                    <th style="width:82px;">被翻牌</th>
-                    <th style="width:128px;">更新时间</th>
+                    <th class="ledger-platform">平台</th>
+                    <th>文章标题</th>
+                    <th class="ledger-state">状态</th>
+                    <th class="ledger-link">链接</th>
+                    <th class="ledger-cites">引用</th>
+                    <th class="ledger-menu-col"><span class="sr-only">操作</span></th>
                   </tr>
                 </thead>
                 <tbody id="ledgerTableBody"></tbody>
               </table>
             </div>
+            <div id="ledgerActions" class="ledger-actions" popover="auto"></div>
+            <dialog id="ledgerReceiptDialog" class="workbench-dialog">
+              <form id="ledgerReceiptForm" class="workbench-dialog-body">
+                <h2>回填发布链接</h2>
+                <label for="ledgerReceiptUrl" class="field-label">公开文章网址</label>
+                <input id="ledgerReceiptUrl" type="url" required class="input" placeholder="https://..." />
+                <div class="dialog-actions">
+                  <button type="button" class="btn btn-glass" onclick="this.closest('dialog').close()">取消</button>
+                  <button type="submit" class="btn btn-primary">保存链接</button>
+                </div>
+              </form>
+            </dialog>
           </div>
         </section>
 
@@ -2019,36 +2013,42 @@
              VIEW 3: 九大发布阵地
              ======================================================= -->
         <section class="view-section" id="view-matrix">
+          <div class="channel-heading">
+            <span id="channelCount"></span>
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('addChannelDialog').showModal()">＋ 新增发布渠道</button>
+          </div>
           <div class="matrix-grid-9" id="matrixCardsGrid"></div>
+          <dialog id="addChannelDialog" class="workbench-dialog">
+            <form class="workbench-dialog-body" id="addChannelForm">
+              <h2>新增发布渠道</h2>
+              <label for="channelName" class="field-label">渠道名称</label>
+              <input id="channelName" required maxlength="80" class="input" placeholder="例如：品牌博客" />
+              <label for="channelUrl" class="field-label">发稿后台网址</label>
+              <input id="channelUrl" required type="url" maxlength="2048" class="input" placeholder="https://..." />
+              <label for="channelNotes" class="field-label">备注（选填）</label>
+              <textarea id="channelNotes" class="textarea" rows="2" maxlength="350"></textarea>
+              <p class="field-hint">新增渠道支持打开后台、加入待发台账和回填链接。</p>
+              <div class="dialog-actions">
+                <button type="button" class="btn btn-glass" onclick="this.closest('dialog').close()">取消</button>
+                <button type="submit" class="btn btn-primary">保存渠道</button>
+              </div>
+            </form>
+          </dialog>
         </section>
 
         <!-- =======================================================
              VIEW 4: AI 可见性成绩单
              ======================================================= -->
         <section class="view-section" id="view-scorecard">
-          <div class="glass-panel studio-card" style="padding:12px 16px;">
+          <div class="glass-panel studio-card exam-overview">
             <div class="toolbar-row">
               <div>
-                <div style="font-size:14px;font-weight:650;color:var(--ink-900);">每周零成本真机联网评测 · 三大核心可见性指标</div>
-                <div style="font-size:12px;color:var(--ink-500);">使用内置便携浏览器打开豆包与 DeepSeek（开启联网搜索），按下方 10 道标准基线考卷实测并归档周度成绩。</div>
+                <div class="card-title">双平台考试</div>
+                <div class="field-hint">在右栏登录豆包和 DeepSeek，再选择一道题同时提交。每个平台的来源链接会单独显示。</div>
               </div>
-              <div style="display:flex;gap:8px;">
-                <button type="button" class="btn btn-glass btn-sm" onclick="openPortableBrowser({ platform: 'doubao' })">
-                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"></circle>
-                    <path d="M8 12h8M12 8l4 4-4 4"></path>
-                  </svg>
-                  <span>打开 豆包 联网考场</span>
-                </button>
-                <button type="button" class="btn btn-red-soft btn-sm" onclick="openPortableBrowser({ platform: 'deepseek' })">
-                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"></circle>
-                    <path d="M8 12h8M12 8l4 4-4 4"></path>
-                  </svg>
-                  <span>打开 DeepSeek 联网考场</span>
-                </button>
-              </div>
+              <button type="button" class="btn btn-glass btn-sm" id="openExamTabs">打开两个考场</button>
             </div>
+            <div id="examResults" class="exam-results" hidden></div>
           </div>
 
           <div class="scorecard-kpi-3">
@@ -2186,11 +2186,19 @@
         <!-- =======================================================
              VIEW 5: 资产库与配置
              ======================================================= -->
+        <section class="view-section desktop-studio-only" id="view-video">
+          <div id="videoStudioViewport" class="video-studio-viewport">
+            <div class="video-studio-status">
+              <p id="videoStudioStatus" role="status">正在启动短视频工作台…</p>
+              <button type="button" class="btn btn-glass btn-sm" id="retryVideoStudio" hidden>启动工作台</button>
+            </div>
+          </div>
+        </section>
         <section class="view-section" id="view-assets">
           <div class="glass-panel studio-card" style="padding:10px 14px;">
             <div class="toolbar-row">
               <div class="seg-bar">
-                <button type="button" class="seg-btn active" data-subtab="titles" onclick="switchAssetTab('titles')">标题库</button>
+                <button type="button" class="seg-btn active" data-subtab="titles" onclick="switchAssetTab('titles')">母题库</button>
                 <button type="button" class="seg-btn" data-subtab="keywords" onclick="switchAssetTab('keywords')">关键词库</button>
                 <button type="button" class="seg-btn" data-subtab="kb" onclick="switchAssetTab('kb')">官方知识库</button>
                 <button type="button" class="seg-btn" data-subtab="settings" onclick="switchAssetTab('settings')">系统连接配置</button>
@@ -2201,33 +2209,26 @@
 
           <!-- Subtab 1: 标题库 -->
           <div class="asset-subpanel active" id="asset-panel-titles">
-            <div class="glass-panel studio-card">
-              <div style="display:grid;grid-template-columns:260px minmax(0,1fr) auto;gap:8px;align-items:end;">
-                <div>
-                  <label class="field-label" for="newTitleLibSelect">所属母题分组</label>
-                  <select id="newTitleLibSelect" class="select" onchange="renderTitleAssets()"></select>
-                </div>
-                <div>
-                  <label class="field-label" for="newTitleInput">新增标准母题名称</label>
-                  <input id="newTitleInput" type="text" class="input" placeholder="输入新的标准检索问答或深度解析母题..." />
-                </div>
-                <button type="button" class="btn btn-primary" onclick="addTitleAsset()">新增母题</button>
-              </div>
-
-              <div class="table-wrap">
-                <table class="glass-table">
-                  <thead>
-                    <tr>
-                      <th style="width:60px;">ID</th>
-                      <th style="width:250px;">母题库分类</th>
-                      <th>标准母题标题</th>
-                      <th style="width:150px;">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody id="titlesTableBody"></tbody>
-                </table>
-              </div>
+            <div class="topic-library-toolbar">
+              <select id="topicLibraryFilter" class="select" aria-label="筛选母题分组" onchange="renderTitleAssets()"></select>
+              <button type="button" class="btn btn-primary btn-sm" id="showAddTopic" aria-controls="addTopicForm" aria-expanded="false" onclick="toggleAddTopic()">＋ 新增母题</button>
             </div>
+            <form id="addTopicForm" class="glass-panel topic-add-form" hidden>
+              <div>
+                <label class="field-label" for="newTitleLibSelect">所属分组</label>
+                <select id="newTitleLibSelect" class="select"></select>
+              </div>
+              <div>
+                <label class="field-label" for="newTitleInput">母题标题</label>
+                <input id="newTitleInput" type="text" class="input" placeholder="输入母题标题" required />
+              </div>
+              <div class="dialog-actions">
+                <button type="button" class="btn btn-glass btn-sm" onclick="toggleAddTopic(false)">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm">保存母题</button>
+              </div>
+            </form>
+            <div class="topic-library-list" id="topicLibraryList"></div>
+            <div id="topicActions" class="ledger-actions" popover="auto"></div>
           </div>
 
           <!-- Subtab 2: 关键词库 -->
@@ -2345,14 +2346,14 @@
             <div class="glass-panel studio-card">
               <div class="toolbar-row">
                 <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:1;">
-                  <div style="width:180px;">
-                    <label class="field-label" for="cfgCdpPort">内置浏览器 CDP 端口</label>
+                  <div class="legacy-browser-setting" style="width:180px;">
+                    <label class="field-label" for="cfgCdpPort">外部浏览器 CDP 端口</label>
                     <input id="cfgCdpPort" type="number" class="input num" value="9233" />
                   </div>
-                  <div style="flex:1;min-width:240px;">
-                    <div class="field-label">本地便携运行环境诊断</div>
-                    <div style="font-size:12px;color:var(--ink-600);line-height:1.55;" id="runtimeDiagnosticsText">正在读取本地 SQLite 与便携 Chromium 路径...</div>
-                  </div>
+                  <details class="runtime-details">
+                    <summary>运行环境</summary>
+                    <div id="runtimeDiagnosticsText"></div>
+                  </details>
                 </div>
                 <button type="button" class="btn btn-primary" onclick="saveSystemSettings()">
                   <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
@@ -2367,6 +2368,37 @@
         </section>
       </div>
     </main>
+    <div class="browser-divider" id="browserDivider" role="separator" aria-label="调整浏览器宽度"
+      aria-orientation="vertical" aria-controls="browserPanel" tabindex="0" hidden></div>
+    <aside class="browser-panel" id="browserPanel" aria-label="登录浏览器" hidden>
+      <header class="browser-panel-heading">
+        <h2>登录浏览器</h2>
+        <button type="button" data-browser-action="new" aria-label="新建标签页" title="新建标签页">＋</button>
+        <button type="button" data-browser-action="fullscreen" aria-pressed="false" title="全屏浏览器（F11）">全屏</button>
+        <button type="button" data-browser-action="close" aria-label="收起浏览器" title="收起浏览器">×</button>
+      </header>
+      <div id="browserTabs" class="browser-tabs" role="tablist" aria-label="浏览器标签页"></div>
+      <form class="browser-toolbar" id="browserAddressForm">
+        <button type="button" data-browser-action="back" aria-label="返回" title="返回" disabled>←</button>
+        <button type="button" data-browser-action="forward" aria-label="前进" title="前进" disabled>→</button>
+        <button type="button" data-browser-action="reload" aria-label="刷新页面" title="刷新页面" disabled>↻</button>
+        <input id="browserAddress" aria-label="浏览器地址" type="text" inputmode="url" autocomplete="off" placeholder="输入网址" />
+        <button type="submit">前往</button>
+      </form>
+      <div class="browser-platform-bar">
+        <select id="browserPlatform" aria-label="选择平台">
+          <option value="">打开平台</option>
+          <option value="sohu">搜狐号</option><option value="toutiao">今日头条</option><option value="netease">网易号</option>
+          <option value="wechat">微信公众号</option><option value="douyin">抖音</option><option value="xiaohongshu">小红书</option>
+          <option value="eastmoney">东方财富</option><option value="ths">同花顺</option><option value="official">山子高科官网</option>
+          <option value="doubao">豆包</option><option value="deepseek">DeepSeek</option>
+        </select>
+        <button type="button" data-browser-action="fill">填入左栏稿件</button>
+      </div>
+      <div class="browser-viewport" id="browserViewport">
+        <div class="browser-placeholder" id="browserStatus" role="status">选择平台，在右侧页面登录。</div>
+      </div>
+    </aside>
   </div>
 
   <!-- Bottom Frosted Status Bar (30px exact match to Haoshi reference) -->
@@ -2378,8 +2410,6 @@
       <span>本地 SQLite</span>
       <span class="status-sep">·</span>
       <span class="num" id="bottomModelText">deepseek-v4.1-flash</span>
-      <span class="status-sep">·</span>
-      <span>0 Token 自动填稿</span>
     </div>
     <div class="status-right">
       <span class="status-shortcut" onclick="switchView('ledger')">/ 台账检索</span>
@@ -2389,27 +2419,9 @@
   </footer>
 
   <script>
-    const VIEW_META = {
-      compose: {
-        title: "创作与质检派发",
-        sub: "官方事实库锚定生成 · 4维信披合规评审 · 官网1秒静态化与便携内核0 Token填稿"
-      },
-      ledger: {
-        title: "全平台发稿台账",
-        sub: "全渠道真实链接闭环管理 · 一键复制与便携浏览器0 Token填稿 · UTF-8 BOM 报表导出"
-      },
-      matrix: {
-        title: "九大发布阵地",
-        sub: "CH-01 官网权威源与八大外部高权重媒体矩阵 · 便携浏览器扫码一次永久保活 Cookie"
-      },
-      scorecard: {
-        title: "AI 可见性成绩单",
-        sub: "每周10题真机联网检阅（豆包 & DeepSeek） · 追踪翻牌率、行业主动提名率与敏感口径准确率"
-      },
-      assets: {
-        title: "资产库与配置",
-        sub: "36标准母题库 · 52核心关键词 · 三大官方事实基准知识库在线修订与系统接口配置"
-      }
+    const VIEW_TITLES = {
+      compose: "写稿与发布", ledger: "发稿台账", matrix: "发布渠道",
+      scorecard: "AI 可见性", video: "短视频工作台", assets: "资料与设置"
     };
 
     const FALLBACK_EXAM_QUESTIONS = [
@@ -2559,9 +2571,9 @@
       document.querySelectorAll("[data-view]").forEach(btn => {
         btn.classList.toggle("active", btn.getAttribute("data-view") === viewName);
       });
-      const meta = VIEW_META[viewName] || VIEW_META.compose;
-      document.getElementById("stageViewTitle").textContent = meta.title;
-      document.getElementById("stageViewSub").textContent = meta.sub;
+      document.getElementById("stageViewTitle").textContent = VIEW_TITLES[viewName] || VIEW_TITLES.compose;
+      document.documentElement.dataset.workspaceView = viewName;
+      window.workbenchBrowser?.setSection?.(viewName);
       if (viewName === "assets" && subTab) {
         switchAssetTab(subTab);
       }
@@ -2607,7 +2619,7 @@
       document.getElementById("navLedgerCount").textContent = sum.total_rows ?? 0;
       document.getElementById("navMatrixCount").textContent = platforms.length || 9;
 
-      const bRun = Boolean(appState.browser_running);
+      const bRun = Boolean(window.geoDesktop || appState.browser_running);
       const sideBadge = document.getElementById("sidebarBrowserBadge");
       sideBadge.textContent = bRun ? "就绪" : "待启动";
       sideBadge.className = "mini-status-tag" + (bRun ? " ready" : "");
@@ -2648,7 +2660,7 @@
         html += `<div class="feed-group-label">待发外网工单</div>`;
         pending.forEach(r => {
           html += `
-            <div class="feed-row" onclick="jumpToLedgerPlatform('${esc(r.platform_label)}')" title="${esc(r.platform_label)} · ${esc(r.title)}">
+            <div class="feed-row" onclick="jumpToLedgerRow(${r.id})" title="${esc(r.platform_label)} · ${esc(r.title)}">
               <span class="feed-ring pending"></span>
               <span class="feed-title">${esc(r.title)}</span>
             </div>`;
@@ -2658,7 +2670,7 @@
         html += `<div class="feed-group-label">近期已上线</div>`;
         done.forEach(r => {
           html += `
-            <div class="feed-row" onclick="jumpToLedgerPlatform('${esc(r.platform_label)}')" title="${esc(r.platform_label)} · ${esc(r.title)}">
+            <div class="feed-row" onclick="jumpToLedgerRow(${r.id})" title="${esc(r.platform_label)} · ${esc(r.title)}">
               <span class="feed-ring done"></span>
               <span class="feed-title">${esc(r.title)}</span>
             </div>`;
@@ -2674,6 +2686,11 @@
       switchView("ledger");
     }
 
+    function jumpToLedgerRow(id) {
+      const row = (appState.ledger || []).find(item => item.id === id);
+      if (row) jumpToLedgerPlatform(row.platform_label);
+    }
+
     /* =======================================================
        VIEW 1 LOGIC: Compose, Drag-Drop, AI Inspect & Dispatch
        ======================================================= */
@@ -2682,13 +2699,13 @@
       const prevVal = tSelect.value;
       const libs = appState.title_libraries || [];
       const titles = appState.titles || [];
-      let optHtml = `<option value="">-- 选择 36 标准母题（共 ${titles.length} 题） --</option>`;
+      let optHtml = `<option value="">选择母题（共 ${titles.length} 题）</option>`;
       libs.forEach(lib => {
         const groupItems = titles.filter(t => t.library_id === lib.id);
         if (groupItems.length) {
           optHtml += `<optgroup label="${esc(lib.name)}">`;
           groupItems.forEach(item => {
-            optHtml += `<option value="${esc(item.title)}">${esc(item.title)}</option>`;
+            optHtml += `<option value="${item.id}">${esc(item.title)}</option>`;
           });
           optHtml += `</optgroup>`;
         }
@@ -2721,7 +2738,7 @@
       document.getElementById("panelModeExisting").style.display = mode === "existing" ? "block" : "none";
 
       const dz = document.getElementById("mdDropzone");
-      dz.style.display = mode === "existing" ? "none" : "flex";
+      dz.style.display = mode === "upload" ? "flex" : "none";
       dz.classList.toggle("expanded", mode === "upload");
 
       if (mode === "existing") {
@@ -2733,10 +2750,8 @@
     }
 
     function onPickTopicDropdown() {
-      const val = document.getElementById("topicSelect36").value;
-      if (val) {
-        document.getElementById("customTopicInput").value = val;
-      }
+      const selected = document.getElementById("topicSelect36").selectedOptions[0];
+      if (selected?.value) document.getElementById("customTopicInput").value = selected.textContent;
     }
 
     function setAiStyle(style) {
@@ -2870,8 +2885,9 @@
     }
 
     async function handleAiGenerate() {
+      const selectedTopic = document.getElementById("topicSelect36").selectedOptions[0];
       const topic = document.getElementById("customTopicInput").value.trim() ||
-        document.getElementById("topicSelect36").value.trim();
+        (selectedTopic?.value ? selectedTopic.textContent.trim() : "");
       if (!topic) {
         showToast("请先选择或输入写作命题", true);
         return;
@@ -3096,9 +3112,12 @@
     function renderLedgerFiltersAndTable() {
       const sel = document.getElementById("ledgerPlatformFilter");
       const cur = sel.value;
-      const labels = Array.from(new Set((appState.ledger || []).map(r => r.platform_label).filter(Boolean)));
-      sel.innerHTML = `<option value="">全部发布平台（CH-01~09）</option>` +
-        labels.map(l => `<option value="${esc(l)}">${esc(l)}</option>`).join("");
+      const labels = new Set([
+        ...(appState.platforms || []).map(p => p.short_name),
+        ...(appState.ledger || []).map(r => r.platform_label),
+      ].filter(Boolean));
+      sel.innerHTML = `<option value="">全部平台</option>` +
+        [...labels].map(l => `<option value="${esc(l)}">${esc(l)}</option>`).join("");
       if (cur) sel.value = cur;
       renderLedgerTable();
     }
@@ -3123,7 +3142,7 @@
       document.getElementById("ledgerFilteredCount").textContent = `共 ${rows.length} 条记录`;
 
       if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--ink-400);padding:28px;">没有匹配的台账记录</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-500);padding:24px;">没有匹配的台账记录</td></tr>`;
         return;
       }
 
@@ -3133,41 +3152,73 @@
         const statusPill = isDone
           ? `<span class="pill pill-jade">已上线</span>`
           : (isInProg ? `<span class="pill pill-red">草稿已填</span>` : `<span class="pill pill-mist">待发布</span>`);
-        const isOfficial = String(r.platform_label || "").includes("官网");
         const cites = Number(r.citations || 0);
+        const url = httpLink(r.url);
 
         return `
           <tr>
-            <td class="num" style="color:var(--ink-400);">#${r.id}</td>
+            <td class="ledger-platform"><span class="line-ellipsis" title="${esc(r.platform_label)}">${esc(r.platform_label)}</span></td>
             <td>
-              <div style="font-weight:600;color:var(--ink-900);">${esc(r.platform_label)}</div>
-              <div style="font-size:11px;color:var(--ink-400);">${esc(r.ai_target || "")}</div>
+              <div class="ledger-title-text line-ellipsis" title="${esc(r.title)}">${esc(r.title)}</div>
+              <div class="ledger-row-meta">#${r.id}${r.updated_at ? " · " + esc(r.updated_at.slice(0, 10)) : ""}</div>
             </td>
-            <td>
-              <div class="ledger-title-text">${esc(r.title)}</div>
-              <div class="ledger-quick-ops">
-                <button type="button" class="btn btn-glass btn-xs" onclick="copyLedgerField(${r.id}, 'title')">复制标题</button>
-                <button type="button" class="btn btn-glass btn-xs" onclick="copyLedgerField(${r.id}, 'content')">复制正文</button>
-                ${(!isOfficial && r.account_id) ? `
-                  <button type="button" class="btn btn-glass btn-xs" onclick="ledgerBrowserAction(${r.id}, 'draft')">浏览器填稿</button>
-                  <button type="button" class="btn btn-red-soft btn-xs" onclick="ledgerBrowserAction(${r.id}, 'publish')">浏览器直发</button>
-                ` : ""}
-                <button type="button" class="btn btn-glass btn-xs" onclick="openPortableBrowser({ url: '${esc(r.url || r.editor_url || "https://www.sensteed.com/insights/")}' })">去后台 ↗</button>
-              </div>
-            </td>
-            <td>${statusPill}</td>
-            <td>
-              <div class="receipt-inline">
-                <input id="receiptInput_${r.id}" type="text" class="input" value="${esc(r.url || "")}" placeholder="粘贴发布后 https:// 链接" />
-                <button type="button" class="btn btn-glass btn-xs" onclick="saveLedgerReceipt(${r.id})">保存</button>
-              </div>
-            </td>
-            <td class="num">
-              <span class="pill ${cites > 0 ? 'pill-red' : 'pill-mist'}">${cites} 次</span>
-            </td>
-            <td class="num" style="font-size:12px;color:var(--ink-500);">${esc(r.updated_at || "")}</td>
+            <td class="ledger-state">${statusPill}</td>
+            <td class="ledger-link">${url ? `<button type="button" class="ledger-text-btn" title="${esc(url)}" onclick="openLedgerTarget(${r.id}, true)">查看</button>` : "—"}</td>
+            <td class="ledger-cites num">${cites || "—"}</td>
+            <td class="ledger-menu-col"><button type="button" class="ledger-more" aria-label="台账操作 #${r.id}" onclick="showLedgerActions(this, ${r.id})">⋯</button></td>
           </tr>`;
       }).join("");
+    }
+
+    function httpLink(value) {
+      try {
+        const parsed = new URL(value);
+        return ["http:", "https:"].includes(parsed.protocol) && !parsed.username && !parsed.password ? parsed.href : "";
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function openLedgerTarget(id, publicLink = false) {
+      const row = (appState.ledger || []).find(item => item.id === id);
+      const url = httpLink(publicLink ? row?.url : row?.editor_url);
+      if (url) openPortableBrowser({ url, newTab: true });
+      else showToast("该条记录还没有这个链接", true);
+    }
+
+    function showLedgerActions(button, id) {
+      const row = (appState.ledger || []).find(item => item.id === id);
+      if (!row) return;
+      const popover = document.getElementById("ledgerActions");
+      popover.innerHTML = `
+        <button type="button" onclick="copyLedgerField(${id}, 'title')">复制标题</button>
+        <button type="button" onclick="copyLedgerField(${id}, 'content')">复制正文</button>
+        ${httpLink(row.editor_url) ? `<button type="button" onclick="openLedgerTarget(${id})">打开发布后台</button>` : ""}
+        ${httpLink(row.url) ? `<button type="button" onclick="openLedgerTarget(${id}, true)">查看已发链接</button>` : ""}
+        <button type="button" onclick="editLedgerReceipt(${id})">回填发布链接</button>
+        ${(!window.geoDesktop && row.account_id && !String(row.platform_label).includes("官网") &&
+            appState.platforms.some(p => p.id === row.account_id && p.platform !== "manual")) ? `
+          <button type="button" onclick="ledgerBrowserAction(${id}, 'draft')">浏览器填稿</button>
+          <button type="button" onclick="ledgerBrowserAction(${id}, 'publish')">浏览器直发</button>` : ""}
+      `;
+      showRowActions(popover, button);
+    }
+
+    function showRowActions(popover, button) {
+      popover.onclick = () => { if (popover.matches(":popover-open")) popover.hidePopover(); };
+      const rect = button.getBoundingClientRect();
+      popover.showPopover();
+      const top = Math.min(rect.bottom + 5, innerHeight - popover.offsetHeight - 12);
+      popover.style.top = `${Math.max(8, top)}px`;
+      popover.style.left = `${Math.max(8, rect.right - popover.offsetWidth)}px`;
+    }
+
+    function editLedgerReceipt(id) {
+      const row = (appState.ledger || []).find(item => item.id === id);
+      const dialog = document.getElementById("ledgerReceiptDialog");
+      dialog.dataset.ledgerId = id;
+      document.getElementById("ledgerReceiptUrl").value = row?.url || "";
+      dialog.showModal();
     }
 
     async function copyLedgerField(ledgerId, field) {
@@ -3178,7 +3229,7 @@
         await navigator.clipboard.writeText(text);
         showToast(field === "title" ? "文章标题已复制到剪贴板" : "文章正文已复制到剪贴板");
       } catch (_) {
-        showToast("剪贴板复制完成");
+        showToast("无法访问剪贴板", true);
       }
     }
 
@@ -3198,9 +3249,11 @@
       }
     }
 
-    async function saveLedgerReceipt(ledgerId) {
-      const inp = document.getElementById(`receiptInput_${ledgerId}`);
-      const url = inp ? inp.value.trim() : "";
+    async function saveLedgerReceipt(event) {
+      event.preventDefault();
+      const dialog = document.getElementById("ledgerReceiptDialog");
+      const ledgerId = Number(dialog.dataset.ledgerId);
+      const url = httpLink(document.getElementById("ledgerReceiptUrl").value.trim());
       if (!url) {
         showToast("请先输入有效的线上真实链接", true);
         return;
@@ -3210,6 +3263,7 @@
           method: "POST",
           body: { ledger_id: Number(ledgerId), url }
         });
+        dialog.close();
         showToast("线上真实链接已回填归档，状态已更新为「已上线」");
         await loadState(false);
       } catch (err) {
@@ -3227,57 +3281,59 @@
     function renderMatrixCards() {
       const grid = document.getElementById("matrixCardsGrid");
       const plats = appState.platforms || [];
+      document.getElementById("channelCount").textContent = `${plats.length} 个渠道`;
       grid.innerHTML = plats.map(p => `
-        <div class="glass-panel matrix-card">
-          <div>
-            <div class="matrix-top">
-              <span class="pill ${p.is_official || p.code === 'CH-02' || p.code === 'CH-05' ? 'pill-red' : 'pill-mist'} num">${esc(p.code)}</span>
-              <span class="pill pill-mist">${esc(p.ai_target)}</span>
-            </div>
-            <div class="matrix-name">${esc(p.short_name)}</div>
-            <div style="font-size:11.5px;color:var(--ink-400);margin-bottom:6px;">${esc(p.name)} · ${esc(p.domain || "")}</div>
-            <div class="matrix-desc">${esc(p.summary)}</div>
+        <article class="channel-row">
+          <div class="channel-main">
+            <span class="channel-code">${esc(p.code)}</span>
+            <div class="channel-name line-ellipsis" title="${esc(p.short_name)}">${esc(p.short_name)}</div>
+            <div class="channel-meta line-ellipsis" title="${esc(p.summary || "")}">${esc(p.domain || "")}${p.summary ? " · " + esc(p.summary) : ""}</div>
           </div>
-
-          <div class="matrix-stats">
-            <div>
-              <div class="m-stat-val">${p.published_count ?? 0}</div>
-              <div class="m-stat-lbl">已发</div>
-            </div>
-            <div>
-              <div class="m-stat-val">${p.pending_count ?? 0}</div>
-              <div class="m-stat-lbl">待发</div>
-            </div>
-            <div>
-              <div class="m-stat-val" style="color:var(--shanzi-red);">${p.citation_count ?? 0}</div>
-              <div class="m-stat-lbl">翻牌</div>
-            </div>
+          <div class="channel-row-actions">
+            <span class="channel-meta">${p.published_count ?? 0} 已发 · ${p.pending_count ?? 0} 待发</span>
+            <button type="button" class="btn btn-glass btn-xs" onclick="openChannel(${p.id}, true)">台账</button>
+            <button type="button" class="btn btn-glass btn-xs" onclick="openChannel(${p.id})">打开 ↗</button>
           </div>
-
-          <div style="display:flex;gap:7px;">
-            <button type="button" class="btn ${p.code === 'CH-01' || p.code === 'CH-02' ? 'btn-primary' : 'btn-red-soft'} btn-sm" style="flex:1;"
-              onclick="openPortableBrowser({ platform: '${esc(p.hub_key)}', url: '${esc(p.editor_url)}' })">
-              <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <path d="M15 3h6v6M10 14L21 3"></path>
-              </svg>
-              <span>内置浏览器打开阵地</span>
-            </button>
-            <button type="button" class="btn btn-glass btn-sm" onclick="jumpToLedgerPlatform('${esc(p.short_name)}')">台账</button>
-          </div>
-        </div>
+        </article>
       `).join("");
     }
 
-    async function openPortableBrowser(payload = {}) {
-      showToast("正在唤起内置便携 Chromium 浏览器...");
+    function openChannel(id, ledger = false) {
+      const channel = (appState.platforms || []).find(item => item.id === id);
+      if (!channel) return;
+      if (ledger) jumpToLedgerPlatform(channel.short_name);
+      else openPortableBrowser({ platform: channel.hub_key, url: channel.editor_url, newTab: true });
+    }
+
+    async function addChannel(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector('[type="submit"]');
+      const url = httpLink(document.getElementById("channelUrl").value.trim());
+      if (!url) return showToast("请输入 HTTP 或 HTTPS 后台网址", true);
+      button.disabled = true;
       try {
-        await apiFetch("/api/browser/open", { method: "POST", body: payload });
-        showToast("已在内置便携浏览器打开目标窗口");
+        await apiFetch("/api/channels", {
+          method: "POST",
+          body: {
+            name: document.getElementById("channelName").value,
+            url,
+            notes: document.getElementById("channelNotes").value,
+          },
+        });
+        form.closest("dialog").close();
+        form.reset();
         await loadState(false);
-      } catch (err) {
-        showToast(err.message, true);
+        showToast("发布渠道已添加");
+      } catch (error) {
+        showToast(error.message, true);
+      } finally {
+        button.disabled = false;
       }
+    }
+
+    function openPortableBrowser(payload = {}) {
+      window.workbenchBrowser.open(payload);
     }
 
     /* =======================================================
@@ -3338,7 +3394,10 @@
               <div style="font-size:12.8px;font-weight:600;color:var(--ink-900);">${esc(q.text)}</div>
               ${checkpoints ? `<div style="font-size:11.2px;color:var(--ink-400);margin-top:2px;">${esc(checkpoints)}</div>` : ""}
             </div>
-            <button type="button" class="btn btn-glass btn-xs" onclick="copyText('${esc(q.text).replace(/'/g, "\\'")}')">复制考题</button>
+            <div class="exam-question-actions">
+              <button type="button" class="btn btn-glass btn-xs exam-run-button" data-exam-run onclick="window.workbenchBrowser.runExam(${idx})">同时问两家</button>
+              <button type="button" class="btn btn-glass btn-xs" onclick="copyText(normalizeExamQuestions().questions[${idx}].text)">复制</button>
+            </div>
           </div>`;
       }).join("");
 
@@ -3421,8 +3480,13 @@
       // Title library dropdown
       const tlSel = document.getElementById("newTitleLibSelect");
       const prevTl = tlSel.value;
-      tlSel.innerHTML = tLibs.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join("");
+      const topicOptions = tLibs.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join("");
+      tlSel.innerHTML = topicOptions;
       if (prevTl) tlSel.value = prevTl;
+      const topicFilter = document.getElementById("topicLibraryFilter");
+      const previousFilter = topicFilter.value;
+      topicFilter.innerHTML = '<option value="">全部分组</option>' + topicOptions;
+      topicFilter.value = tLibs.some(l => String(l.id) === previousFilter) ? previousFilter : "";
       renderTitleAssets();
 
       // Keyword library dropdown
@@ -3452,38 +3516,130 @@
       offBadge.textContent = sm.has_official_secret ? "签名密钥已就绪" : "未配置签名密钥";
       offBadge.className = "pill " + (sm.has_official_secret ? "pill-jade" : "pill-red");
 
-      document.getElementById("runtimeDiagnosticsText").textContent =
-        `便携浏览器路径：${appState.chromium_path || "未检测到便携包，自动回退系统浏览器"}  |  本地数据目录：${appState.data_dir || "./data"}`;
+      const diagnostics = document.getElementById("runtimeDiagnosticsText");
+      diagnostics.textContent = window.geoDesktop
+        ? `Electron 内嵌浏览器 · 本地数据 ${appState.data_dir || "./data"}`
+        : `浏览器 ${appState.chromium_path || "使用系统浏览器"} · 本地数据 ${appState.data_dir || "./data"}`;
+    }
+
+    let editingTopicId = null;
+
+    function openTopicLibrary() {
+      const selectedId = Number(document.getElementById("topicSelect36").value);
+      switchView("assets", "titles");
+      const filter = document.getElementById("topicLibraryFilter");
+      if (filter.value && selectedId && !document.getElementById(`topic-row-${selectedId}`)) {
+        filter.value = "";
+        renderTitleAssets();
+      }
+      requestAnimationFrame(() => {
+        const row = document.getElementById(`topic-row-${selectedId}`);
+        row?.scrollIntoView({ block: "center" });
+        row?.focus({ preventScroll: true });
+      });
     }
 
     function renderTitleAssets() {
-      const libMap = {};
-      (appState.title_libraries || []).forEach(l => { libMap[l.id] = l.name; });
       const titles = appState.titles || [];
-      const tbody = document.getElementById("titlesTableBody");
-      tbody.innerHTML = titles.map(t => `
-        <tr>
-          <td class="num" style="color:var(--ink-400);">#${t.id}</td>
-          <td><span class="pill pill-mist">${esc(libMap[t.library_id] || `分类 #${t.library_id}`)}</span></td>
-          <td style="font-weight:550;color:var(--ink-900);">${esc(t.title)}</td>
-          <td>
-            <div style="display:flex;gap:6px;">
-              <button type="button" class="btn btn-red-soft btn-xs" onclick="useTitleToWrite('${esc(t.title).replace(/'/g, "\\'")}')">去写稿</button>
-              <button type="button" class="btn btn-glass btn-xs" onclick="deleteTitleAsset(${t.id})">删除</button>
-            </div>
-          </td>
-        </tr>
-      `).join("");
+      const selectedGroup = document.getElementById("topicLibraryFilter").value;
+      const groups = new Map((appState.title_libraries || []).map(lib => [lib.id, { name: lib.name, items: [] }]));
+      for (const title of titles) {
+        if (selectedGroup && String(title.library_id) !== selectedGroup) continue;
+        if (!groups.has(title.library_id)) groups.set(title.library_id, { name: "其他分组", items: [] });
+        groups.get(title.library_id).items.push(title);
+      }
+      const list = document.getElementById("topicLibraryList");
+      list.innerHTML = [...groups.values()].filter(group => group.items.length).map(group => `
+        <section class="topic-group" aria-label="${esc(group.name)}">
+          <header class="topic-group-heading">
+            <h3 class="line-ellipsis" title="${esc(group.name)}">${esc(group.name)}</h3>
+            <span>${group.items.length} 题</span>
+          </header>
+          ${group.items.map(t => `
+            <article id="topic-row-${t.id}" class="topic-row" tabindex="-1">
+              ${editingTopicId === t.id ? `
+                <input id="editTopicTitle" type="text" class="input" aria-label="母题标题"
+                  onkeydown="if(event.key === 'Enter') this.nextElementSibling.querySelector('button').click()">
+                <div class="topic-row-actions">
+                  <button type="button" class="btn btn-primary btn-xs" onclick="saveTitleAsset(${t.id}, this)">保存</button>
+                  <button type="button" class="btn btn-glass btn-xs" onclick="editTitleAsset(null)">取消</button>
+                </div>
+              ` : `
+                <button type="button" class="topic-title line-ellipsis" aria-expanded="false" title="${esc(t.title)}"
+                  onclick="this.setAttribute('aria-expanded', String(this.getAttribute('aria-expanded') === 'false'))">${esc(t.title)}</button>
+                <div class="topic-row-actions">
+                  <button type="button" class="topic-write" onclick="useTitleToWrite(${t.id})">去写稿</button>
+                  <button type="button" class="ledger-more" aria-label="母题操作 #${t.id}" onclick="showTopicActions(this, ${t.id})">⋯</button>
+                </div>
+              `}
+            </article>
+          `).join("")}
+        </section>`).join("") || '<div class="topic-empty">这个分组还没有母题。</div>';
+      const editor = document.getElementById("editTopicTitle");
+      if (editor) editor.value = titles.find(t => t.id === editingTopicId)?.title || "";
     }
 
-    function useTitleToWrite(title) {
+    function showTopicActions(button, id) {
+      const menu = document.getElementById("topicActions");
+      menu.innerHTML = `
+        <button type="button" onclick="editTitleAsset(${id})">编辑</button>
+        <button type="button" class="topic-write-menu" onclick="useTitleToWrite(${id})">去写稿</button>
+        <button type="button" onclick="deleteTitleAsset(${id})">删除</button>`;
+      showRowActions(menu, button);
+    }
+
+    function toggleAddTopic(force) {
+      const form = document.getElementById("addTopicForm");
+      const button = document.getElementById("showAddTopic");
+      const opened = force ?? form.hidden;
+      form.hidden = !opened;
+      button.setAttribute("aria-expanded", String(opened));
+      if (opened) {
+        const selected = document.getElementById("topicLibraryFilter").value;
+        if (selected) document.getElementById("newTitleLibSelect").value = selected;
+        document.getElementById("newTitleInput").focus();
+      }
+    }
+
+    function editTitleAsset(id) {
+      editingTopicId = id;
+      renderTitleAssets();
+      document.getElementById("editTopicTitle")?.focus();
+    }
+
+    async function saveTitleAsset(id, button) {
+      const title = document.getElementById("editTopicTitle").value.trim();
+      if (!title) return showToast("母题标题不能为空", true);
+      button.disabled = true;
+      try {
+        await apiFetch(`/api/assets/title/${id}`, { method: "PUT", body: { title } });
+        const selected = document.getElementById("topicSelect36");
+        const draftTopic = document.getElementById("customTopicInput");
+        if (Number(selected.value) === id && draftTopic.value === selected.selectedOptions[0]?.textContent) {
+          draftTopic.value = title;
+        }
+        editingTopicId = null;
+        await loadState(false);
+        showToast("母题标题已保存");
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function useTitleToWrite(id) {
+      const title = appState.titles.find(t => t.id === id);
+      if (!title) return;
       setComposeMode("ai");
-      document.getElementById("customTopicInput").value = title;
+      document.getElementById("topicSelect36").value = String(id);
+      document.getElementById("customTopicInput").value = title.title;
       switchView("compose");
       showToast("已将所选母题带入创作中心");
     }
 
-    async function addTitleAsset() {
+    async function addTitleAsset(event) {
+      event.preventDefault();
       const library_id = Number(document.getElementById("newTitleLibSelect").value || 1);
       const title = document.getElementById("newTitleInput").value.trim();
       if (!title) {
@@ -3491,10 +3647,15 @@
         return;
       }
       try {
-        await apiFetch("/api/assets/title", { method: "POST", body: { library_id, title } });
+        const result = await apiFetch("/api/assets/title", { method: "POST", body: { library_id, title } });
         document.getElementById("newTitleInput").value = "";
+        toggleAddTopic(false);
+        document.getElementById("topicLibraryFilter").value = String(library_id);
         showToast("标准母题已添加入库");
         await loadState(false);
+        const row = document.getElementById(`topic-row-${result.id}`);
+        row?.scrollIntoView({ block: "nearest" });
+        row?.focus({ preventScroll: true });
       } catch (err) {
         showToast(err.message, true);
       }
@@ -3661,8 +3822,14 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       initDropzone();
+      setComposeMode("ai");
+      document.documentElement.dataset.workspaceView = currentView;
+      document.getElementById("ledgerReceiptForm").addEventListener("submit", saveLedgerReceipt);
+      document.getElementById("addChannelForm").addEventListener("submit", addChannel);
+      document.getElementById("addTopicForm").addEventListener("submit", addTitleAsset);
       loadState(false);
     });
   </script>
+  <script src="/static/browser-panel.js"></script>
 </body>
 </html>

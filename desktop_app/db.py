@@ -7,6 +7,7 @@ import os
 import pathlib
 import sqlite3
 import sys
+from urllib.parse import urlsplit
 from typing import Any
 
 
@@ -91,6 +92,19 @@ def platform_meta(acc: dict[str, Any]) -> dict[str, Any]:
     name = str(acc.get("account_name") or "")
     plat = str(acc.get("platform") or "custom").lower()
     url = str(acc.get("profile_url") or "")
+
+    if plat == "manual":
+        return {
+            "code": f"CH-{int(acc['id']):02d}",
+            "short_name": name,
+            "hub_key": "",
+            "ai_target": "手动发布",
+            "summary": str(acc.get("notes") or ""),
+            "badge": "sz-tag-slate",
+            "editor_url": url,
+            "domain": urlsplit(url).hostname or "",
+            "is_official": False,
+        }
 
     if "官网" in name or "sensteed.com" in url:
         return {
@@ -466,7 +480,7 @@ class GeoLocalDB:
                     by_acc[aid]["pending_count"] += 1
                 by_acc[aid]["citation_count"] += int(row.get("citations") or 0)
 
-        platforms.sort(key=lambda x: x["code"])
+        platforms.sort(key=lambda x: (x["platform"] == "manual", x["id"] if x["platform"] == "manual" else x["code"]))
         pub_cnt = sum(1 for r in ledger if r["status"] == "completed")
         cited_urls = sum(1 for r in ledger if int(r.get("citations") or 0) > 0)
         cite_hits = sum(int(r.get("citations") or 0) for r in ledger)

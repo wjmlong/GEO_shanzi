@@ -227,8 +227,8 @@ class PortableBrowserEngine:
 
     def is_running(self) -> bool:
         try:
-            r = httpx.get(f"{self.cdp_url}/json/version", timeout=0.8)
-            return r.status_code == 200
+            with httpx.Client(timeout=0.8, trust_env=False) as client:
+                return client.get(f"{self.cdp_url}/json/version").status_code == 200
         except Exception:
             return False
 
@@ -322,6 +322,40 @@ class PortableBrowserEngine:
                 if platform == "toutiao":
                     return await self._publish_toutiao(page, title, paragraphs, action)
                 return await self._publish_generic(page, platform, target, title, paragraphs)
+
+    async def fill_desktop_draft(self, port: int, target_id: str, url: str, title: str, content: str) -> dict[str, Any]:
+        """Fill the page the operator has open. Never create a new tab or submit a form."""
+        body = "\n\n".join(clean_markdown_to_paragraphs(content))
+        if not title.strip() or not body.strip():
+            return {"ok": False, "message": "请先填写标题与正文。"}
+        async with self._lock:
+            async with async_playwright() as playwright:
+                browser = await playwright.chromium.connect_over_cdp(f"http://127.0.0.1:{port}", timeout=8000)
+                for context in browser.contexts:
+                    for page in context.pages:
+                        if page.url != url:
+                            continue
+                        session = await context.new_cdp_session(page)
+                        try:
+                            info = await session.send("Target.getTargetInfo")
+                        finally:
+                            await session.detach()
+                        if info["targetInfo"]["targetId"] == target_id:
+                            return await self._fill_current_editor(page, title.strip(), body)
+        return {"ok": False, "message": "右栏页面已切换，请在当前编辑页重新点填稿。"}
+
+    async def _fill_current_editor(self, page: Page, title: str, body: str) -> dict[str, Any]:
+        if await self._check_gate(page):
+            return {"ok": False, "message": "请先在右栏完成平台登录或验证。"}
+        title_fields = page.locator("input[placeholder*='标题']:visible, textarea[placeholder*='标题']:visible")
+        body_fields = page.locator(".ProseMirror[contenteditable='true']:visible, .ql-editor[contenteditable='true']:visible, [contenteditable='true']:visible, textarea:not([placeholder*='标题']):visible")
+        if await title_fields.count() != 1 or await body_fields.count() != 1:
+            return {"ok": False, "message": "请打开平台发稿编辑页，确认有一个标题栏和一个正文栏。"}
+        if urllib.parse.urlsplit(page.url).hostname == "mp.toutiao.com":
+            title = clean_title_for_platform(title, 30)
+        await title_fields.fill(title, timeout=5000)
+        await body_fields.fill(body, timeout=5000)
+        return {"ok": True, "message": "标题和正文已填入右栏。你可以继续编辑。"}
 
     async def _publish_toutiao(self, page: Page, title: str, paragraphs: list[str], action: str) -> dict[str, Any]:
         await page.goto(PLATFORM_URLS["toutiao"], wait_until="domcontentloaded", timeout=35000)
