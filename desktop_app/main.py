@@ -230,15 +230,22 @@ def _launch_chromium_app_fallback(url: str, logger: logging.Logger) -> None:
     if chrome_bin and chrome_bin.exists():
         shell_profile = data_dir() / "app-shell-profile"
         shell_profile.mkdir(parents=True, exist_ok=True)
+        for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
+            lp = shell_profile / lock_name
+            if lp.exists():
+                try:
+                    lp.unlink()
+                except OSError:
+                    pass
         args = [
             str(chrome_bin),
             f"--app={url}",
             f"--user-data-dir={shell_profile}",
-            "--window-size=1380,880",
+            "--window-size=1420,900",
             "--no-first-run",
             "--no-default-browser-check",
         ]
-        logger.info("Launching portable Chromium app-mode fallback: %s", chrome_bin)
+        logger.info("Launching portable Chromium desktop window: %s -> %s", chrome_bin, url)
         proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         proc.wait()
         return
@@ -285,19 +292,9 @@ def run_desktop_app(port_override: int = 0, serve_only: bool = False) -> int:
         return 0
 
     try:
-        import webview
-
-        webview.create_window(
-            WINDOW_TITLE,
-            url,
-            width=1380,
-            height=880,
-            min_size=(1080, 720),
-            background_color="#F5F7FA",
-        )
-        webview.start()
-    except Exception as exc:
-        logger.warning("pywebview native window unavailable (%s); falling back to portable Chromium --app mode", exc)
+        # Primary window shell: bundled portable Chromium in native borderless --app window mode
+        # (avoids pythonnet/.NET CLR native crashes in frozen Windows builds and guarantees
+        # hardware-accelerated backdrop-filter Liquid Glass rendering on every PC).
         _launch_chromium_app_fallback(url, logger)
     finally:
         logger.info("Shutting down local FastAPI server")
