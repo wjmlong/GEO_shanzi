@@ -1,0 +1,26 @@
+services:
+  browser-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+    image: geoflow-browser-hub:1.0.0
+    container_name: geoflow-browser-hub
+    shm_size: 2gb
+    restart: unless-stopped
+    environment:
+      - SCREEN_WIDTH=1440
+      - SCREEN_HEIGHT=900
+      - STARTUP_URL=https://mp.toutiao.com/profile_v4/graphic/publish
+      - BROWSER_HUB_VNC_PASSWORD=${BROWSER_HUB_VNC_PASSWORD:-}
+      - BROWSER_HUB_TOKEN=${BROWSER_HUB_TOKEN:-}
+    ports:
+      - "${BROWSER_HUB_BIND_IP:-127.0.0.1}:${BROWSER_HUB_PORT:-18082}:6080"
+    volumes:
+      - ${BROWSER_HUB_PROFILE_DIR:-./data/chrome-profile}:/data/profile
+    networks:
+      - geoflow-portable-net
+
+networks:
+  geoflow-portable-net:
+    external: true

@@ -34,6 +34,43 @@ class GeoMatrixController extends Controller
         ['url' => 'https://www.sensteed.com/insights/article/keyinfo-299.html', 'title' => '历史关键信息归档 #299（官网专栏已静态化）', 'date' => '2026-11-11'],
     ];
 
+    private static function callBrowserHub(string $method, string $path, ?array $body = null, int $timeoutSec = 30): ?array
+    {
+        $base = rtrim((string) env('GEOFLOW_BROWSER_HUB_URL', 'http://geoflow-browser-hub:8090'), '/');
+        $token = (string) env('GEOFLOW_BROWSER_HUB_TOKEN', '');
+        $ch = curl_init($base . $path);
+        if ($ch === false) {
+            return null;
+        }
+        $headers = ['Accept: application/json'];
+        if ($token !== '') {
+            $headers[] = 'X-Hub-Token: ' . $token;
+        }
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => strtoupper($method),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_TIMEOUT => $timeoutSec,
+        ]);
+        if ($body !== null) {
+            $headers[] = 'Content-Type: application/json';
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $raw = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if (! is_string($raw) || $raw === '') {
+            return null;
+        }
+        $decoded = json_decode($raw, true);
+        if (! is_array($decoded)) {
+            return null;
+        }
+        $decoded['_http_code'] = $code;
+        return $decoded;
+    }
+
     public static function platformMeta(object $acc): array
     {
         $name = (string) ($acc->account_name ?? '');
@@ -254,6 +291,7 @@ class GeoMatrixController extends Controller
                 'row_type' => 'official',
                 'id' => 'dist-' . $row->id,
                 'manual_publication_id' => null,
+                'article_id' => (int) $row->article_id,
                 'account_id' => $officialAccId,
                 'platform_label' => '官网 · 关键信息',
                 'ai_target' => '全引擎权威源',
@@ -277,6 +315,7 @@ class GeoMatrixController extends Controller
                 'row_type' => 'official_archive',
                 'id' => 'leg-' . md5($u),
                 'manual_publication_id' => null,
+                'article_id' => null,
                 'account_id' => $officialAccId,
                 'platform_label' => '官网 · 关键信息',
                 'ai_target' => '全引擎权威源',
@@ -313,6 +352,7 @@ class GeoMatrixController extends Controller
                 'row_type' => 'manual',
                 'id' => 'mp-' . $m->id,
                 'manual_publication_id' => (int) $m->id,
+                'article_id' => $m->article_id ? (int) $m->article_id : null,
                 'account_id' => $aid,
                 'platform_label' => $st ? $st['short_name'] : ((string) ($m->account_name ?: $m->platform)),
                 'ai_target' => $st ? $st['ai_target'] : '外部平台',
@@ -346,7 +386,11 @@ class GeoMatrixController extends Controller
         $totalCitedUrls = count(array_filter($ledger, fn ($r) => $r['citations'] > 0));
         $totalCitationHits = array_sum(array_map(fn ($r) => $r['citations'], $ledger));
 
+        $hData = self::callBrowserHub('GET', '/health', null, 2);
+        $hubOnline = is_array($hData) && ! empty($hData['cdp_ready']);
+
         return [
+            'browser_hub_online' => $hubOnline,
             'platforms' => array_values($accStats),
             'ledger' => $ledger,
             'approved_articles' => $approvedArticles,
@@ -478,9 +522,13 @@ class GeoMatrixController extends Controller
             'article_id' => ['nullable', 'integer'],
             'title' => ['nullable', 'string', 'max:250'],
             'content' => ['nullable', 'string', 'max:50000'],
+            'external_action' => ['nullable', 'in:draft,publish,ledger_only'],
             'account_ids' => ['required', 'array', 'min:1'],
             'account_ids.*' => ['integer'],
         ]);
+        $extAction = (string) ($data['external_action'] ?? 'draft');
+        $hubUrl = rtrim((string) env('GEOFLOW_BROWSER_HUB_URL', 'http://geoflow-browser-hub:8090'), '/');
+        $hubToken = (string) env('GEOFLOW_BROWSER_HUB_TOKEN', '');
 
         $now = now();
         if ($data['mode'] === 'existing') {
@@ -563,15 +611,17 @@ class GeoMatrixController extends Controller
                     $msgs[] = '官网推送失败：' . $e->getMessage();
                 }
             } else {
-                // Create ready work order in manual_publications (bypassing AI gate for human-uploaded drafts)
-                $exists = ManualPublication::query()
+                // Ensure work order exists in manual_publications
+                $mp = ManualPublication::query()
                     ->where('account_id', $acc->id)
                     ->where('article_id', $article->id)
                     ->whereIn('status', ['ready', 'in_progress', 'completed'])
-                    ->exists();
-                if (! $exists) {
+                    ->orderByDesc('id')
+                    ->first();
+
+                if (! $mp) {
                     $fullContent = '# ' . $article->title . "\n\n" . $article->content;
-                    ManualPublication::query()->create([
+                    $mp = ManualPublication::query()->create([
                         'type' => ManualPublication::TYPE_POST,
                         'article_id' => $article->id,
                         'persona_id' => $acc->persona_id ?: 1,
@@ -598,9 +648,52 @@ class GeoMatrixController extends Controller
                             'body' => $article->content,
                         ],
                     ]);
+                }
+
+                if ($extAction === 'ledger_only') {
                     $msgs[] = $meta['short_name'] . ' 已加入待发台账';
-                } else {
-                    $msgs[] = $meta['short_name'] . ' 已存在该篇记录（未重复创建）';
+                    continue;
+                }
+
+                // Resolve platform key for geoflow-browser-hub
+                $hubPlat = (string) $acc->platform;
+                if ($hubPlat === 'custom' || $hubPlat === '') {
+                    if (str_contains((string) $acc->account_name, '东方财富')) {
+                        $hubPlat = 'eastmoney';
+                    } elseif (str_contains((string) $acc->account_name, '同花顺')) {
+                        $hubPlat = 'ths';
+                    }
+                }
+
+                try {
+                    $hubData = self::callBrowserHub('POST', '/publish', [
+                        'platform' => $hubPlat,
+                        'title' => (string) $article->title,
+                        'content' => (string) $article->content,
+                        'action' => $extAction,
+                        'editor_url' => $meta['editor_url'],
+                    ], 55);
+                    if (is_array($hubData) && ! empty($hubData['ok'])) {
+                        $liveUrl = trim((string) ($hubData['url'] ?? ''));
+                        if ($liveUrl !== '') {
+                            $mp->update([
+                                'status' => ManualPublication::STATUS_COMPLETED,
+                                'completion_url' => $liveUrl,
+                                'completed_at' => now(),
+                                'status_changed_at' => now(),
+                            ]);
+                        } elseif ($mp->status === ManualPublication::STATUS_READY) {
+                            $mp->update([
+                                'status' => 'in_progress',
+                                'status_changed_at' => now(),
+                            ]);
+                        }
+                        $msgs[] = (string) ($hubData['message'] ?? ($meta['short_name'] . ' 已推送至云端浏览器'));
+                    } else {
+                        $msgs[] = $meta['short_name'] . '：' . ((string) ($hubData['message'] ?? $hubData['detail'] ?? '云端浏览器暂未就绪，已保留待发台账'));
+                    }
+                } catch (Throwable $e) {
+                    $msgs[] = $meta['short_name'] . ' 已记入台账（云端浏览器连接异常：' . $e->getMessage() . '）';
                 }
             }
         }

@@ -5,6 +5,8 @@
     $mxLedger = $mx['ledger'];
     $totalTitles = $mx['titles_by_lib']->flatten()->count();
     $totalKeywords = $mx['keywords_by_lib']->flatten()->count();
+    $hubOnline = (bool) ($mx['browser_hub_online'] ?? false);
+    $browserGuiUrl = request()->getScheme() . '://' . request()->getHost() . ':18082/vnc.html?autoconnect=true&resize=scale';
 @endphp
 
 <style>
@@ -288,6 +290,10 @@
                 <div class="sz-title mt-1">合规质检、分发矩阵与被翻牌台账</div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ $browserGuiUrl }}" target="_blank" rel="noopener noreferrer" class="sz-btn-blue-outline inline-flex h-9 items-center gap-2 px-3.5 text-xs">
+                    <span class="sz-dot {{ $hubOnline ? 'sz-dot-done' : 'sz-dot-wait' }}"></span>
+                    <span>云端登录浏览器 ↗</span>
+                </a>
                 <a href="{{ route('admin.analytics.ai-visibility') }}" class="sz-btn-ghost inline-flex h-9 items-center px-3.5 text-xs">
                     AI 可见性成绩单
                 </a>
@@ -409,10 +415,17 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <span class="text-xs" style="color: var(--sz-ink-3);">勾选官网后将自动生成静态页并推送至 sensteed.com/insights/，其余平台生成待发记录。</span>
-                <button type="submit" id="sz-dispatch-submit" class="sz-btn-blue-outline inline-flex h-9 items-center px-4 text-xs">
-                    确认一键派发
-                </button>
+                <span class="text-xs" style="color: var(--sz-ink-3);">官网 1 秒自动上线；外网渠道将直接驱动云端常驻浏览器执行自动填稿或发布。</span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <select name="external_action" class="sz-input h-9 px-3 text-xs">
+                        <option value="draft">外网模式：云端浏览器自动填入草稿（核对后发布）</option>
+                        <option value="publish">外网模式：云端浏览器直接自动提交发布</option>
+                        <option value="ledger_only">外网模式：仅记入下方待发台账</option>
+                    </select>
+                    <button type="submit" id="sz-dispatch-submit" class="sz-btn-primary inline-flex h-9 items-center px-4 text-xs">
+                        确认一键派发
+                    </button>
+                </div>
             </div>
         </form>
     </section>
@@ -499,6 +512,24 @@
                                     <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                         <button type="button" class="sz-copy-btn sz-btn-ghost px-2 py-0.5 text-[11px]" data-copy="{{ $row['title'] }}">复制标题</button>
                                         <button type="button" class="sz-copy-btn sz-btn-ghost px-2 py-0.5 text-[11px]" data-copy="{{ $row['content'] }}">复制正文</button>
+                                        @if(!$isDone && !empty($row['article_id']) && !empty($row['account_id']))
+                                            <form method="POST" action="{{ route('admin.distribution.quick-dispatch') }}" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="mode" value="existing">
+                                                <input type="hidden" name="article_id" value="{{ $row['article_id'] }}">
+                                                <input type="hidden" name="account_ids[]" value="{{ $row['account_id'] }}">
+                                                <input type="hidden" name="external_action" value="draft">
+                                                <button type="submit" class="sz-btn-blue-outline px-2 py-0.5 text-[11px]">云端填稿</button>
+                                            </form>
+                                            <form method="POST" action="{{ route('admin.distribution.quick-dispatch') }}" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="mode" value="existing">
+                                                <input type="hidden" name="article_id" value="{{ $row['article_id'] }}">
+                                                <input type="hidden" name="account_ids[]" value="{{ $row['account_id'] }}">
+                                                <input type="hidden" name="external_action" value="publish">
+                                                <button type="submit" class="sz-btn-primary px-2 py-0.5 text-[11px]">云端直发</button>
+                                            </form>
+                                        @endif
                                         @if(!$isDone && $row['editor_url'] !== '#')
                                             <a href="{{ $row['editor_url'] }}" target="_blank" rel="noopener noreferrer" class="px-1.5 py-0.5 text-[11px] font-medium hover:underline" style="color: var(--sz-blue-ink);">去发文 ↗</a>
                                         @endif
