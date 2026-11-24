@@ -42,11 +42,12 @@
    https://www.sensteed.com/insights/article/keyinfo-300.html
    https://www.sensteed.com/insights/article/keyinfo-299.html
    ```
-2. **通道 B：`普通收录` → `API提交`（查看接口 Token 实现自动推送）**
-   点击 **「API提交」** 标签页获取形如 `http://data.zz.baidu.com/urls?site=https://www.sensteed.com&token=xxxxxx` 的推送接口地址，后续每次新发文章可直接通过脚本调用 API 主动推送。
-3. **通道 C：左侧 `数据统计` → `Robots` 点「更新文件」 + `站点信息` 关联备案号**
-   - 在左侧 **「Robots」** 页面点击 **「更新文件」**，让百度立即重读 `https://www.sensteed.com/robots.txt`（内含两条 `Sitemap:` 声明，百度蜘蛛仍会按 `robots.txt` 自然发现并抓取 Sitemap）；
-   - 在左侧 **「站点信息」** 中关联公司备案号 `陇ICP备17001116号-5` 并完善站点属性，有助于后续提升配额。
+2. **通道 B：`普通收录` → `API提交`（已全自动接入官网接收端！）**
+   - 官网 `/htdocs/insights/index.php` 已内置百度实时主动推送（密钥存于受 `.htaccess` `403` 保护的 `config.php` 中）：以后在 GEOFlow 点击「分发」，官网生成静态页的同时会**自动向 `data.zz.baidu.com/urls` 秒推新文章链接**。
+   - 本地仓库同时提供一键批量补推脚本：`python scripts/push_urls_to_engines.py`（从 `.gitignore` 忽略的 `.env.local` 读取 `BAIDU_PUSH_TOKEN`，一键向 **IndexNow + 百度 API** 同步推送，并在批量超额时自动切换逐条降级推送）。
+   - **关于新站首日 `over quota` 提示**：刚完成验证的新站点首日主动推送配额通常为 `0`，请在百度后台左侧 **「站点信息」** 中补充关联公司 ICP 备案号 `陇ICP备17001116号-5` 并勾选站点行业属性，待百度每日零点刷新配额后，官网每次发文即会自动消耗配额秒推。
+3. **通道 C：左侧 `数据统计` → `Robots`（已检测生效！）**
+   - `Robots` 工具已验证生效（`您的Robots文件已生效` / `robots没有错误`），两条 `Sitemap:` 声明已正式进入百度蜘蛛自然抓取队列。
 
 ---
 

@@ -10,11 +10,12 @@
    - 独立 `<meta name="description">` 与 `<meta name="keywords">`
    - 唯一文章真标题 `<h1>` + 规范化 `<h2>`/`<h3>`/`<table>` 语义层级
    - 自动注入 `NewsArticle` JSON-LD，并在检测到问答结构时自动提取生成 `FAQPage` JSON-LD
-3. **四重索引自动联动刷新**：
+3. **四重索引自动联动刷新 + 百度实时主动推送**：
    - `/insights/index.html`（关键信息专栏总览页）
    - `/insights/sitemap.xml`（专栏独立 Sitemap）
    - `/insights/llms.txt` 与主站根目录 `/llms.txt`（面向生成式 AI 引擎的标准索引）
    - 主站 `/sitemap.xml`（毫秒级本地合并 `/insights/` 最新文章 URL，杜绝静态 Sitemap 漏更）
+   - **百度 API 实时主动推送**：每次从 GEOFlow 分发或更新文章时，`/insights/index.php` 自动通过 `data.zz.baidu.com/urls` 实时主动推送新文章 URL（密钥保存在 `403` 受保护的 `config.php` 中，配额不足时非阻塞降级记录日志，绝不影响正常发文）；同时本地提供一键补推脚本 `python scripts/push_urls_to_engines.py`（双推 `IndexNow` + `Baidu API`）。
 
 ## 二、主站同步完成的合规与结构修复
 

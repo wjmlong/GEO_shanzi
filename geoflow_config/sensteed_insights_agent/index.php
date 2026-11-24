@@ -311,6 +311,52 @@ function ins_save_manifest($dir, $manifest) {
     file_put_contents($dir . '/storage/manifest.json', ins_json_encode_utf8($manifest));
 }
 
+function ins_push_baidu_urls($dir, $config, $urls) {
+    $token = isset($config['baidu_push_token']) ? trim((string)$config['baidu_push_token']) : '';
+    if ($token === '' || strpos($token, 'REPLACE_') === 0) {
+        return array('skipped' => true, 'reason' => 'no_token');
+    }
+    if (!is_array($urls) || empty($urls)) {
+        return array('skipped' => true, 'reason' => 'empty_urls');
+    }
+    $site = isset($config['main_site_url']) ? rtrim((string)$config['main_site_url'], '/') : 'https://www.sensteed.com';
+    $fp = @fsockopen('data.zz.baidu.com', 80, $errno, $errstr, 2);
+    if (!$fp) {
+        $res = array('ok' => false, 'error' => 'connect_failed', 'errno' => intval($errno), 'errstr' => (string)$errstr, 'ts' => date('c'));
+        @file_put_contents($dir . '/storage/last_baidu_push.json', ins_json_encode_utf8($res));
+        return $res;
+    }
+    @stream_set_timeout($fp, 2);
+    $body = implode("\n", $urls);
+    $path = '/urls?site=' . $site . '&token=' . rawurlencode($token);
+    $req = "POST " . $path . " HTTP/1.1\r\n"
+        . "Host: data.zz.baidu.com\r\n"
+        . "User-Agent: sensteed-insights-agent/1.0\r\n"
+        . "Content-Type: text/plain\r\n"
+        . "Content-Length: " . strlen($body) . "\r\n"
+        . "Connection: close\r\n\r\n"
+        . $body;
+    @fwrite($fp, $req);
+    $raw = '';
+    while (!feof($fp)) {
+        $chunk = @fread($fp, 1024);
+        if ($chunk === false || $chunk === '') break;
+        $raw .= $chunk;
+        if (strlen($raw) > 8192) break;
+    }
+    @fclose($fp);
+    $parts = explode("\r\n\r\n", $raw, 2);
+    $respHead = isset($parts[0]) ? $parts[0] : '';
+    $respBody = isset($parts[1]) ? trim($parts[1]) : '';
+    $httpCode = 0;
+    if (preg_match('#HTTP/\d+\.\d+\s+(\d+)#', $respHead, $m)) {
+        $httpCode = intval($m[1]);
+    }
+    $res = array('ok' => ($httpCode === 200), 'http_code' => $httpCode, 'body' => $respBody, 'urls' => $urls, 'ts' => date('c'));
+    @file_put_contents($dir . '/storage/last_baidu_push.json', ins_json_encode_utf8($res));
+    return $res;
+}
+
 
 function ins_rebuild_indexes($dir, $config) {
     $manifest = ins_load_manifest($dir);
@@ -506,14 +552,29 @@ if ($agentPos !== false) {
         ins_rebuild_indexes($INSIGHTS_DIR, $CONFIG);
 
         $remoteUrl = rtrim((string)$CONFIG['public_base_url'], '/') . '/article/' . $fileSlug . '.html';
-        
+        $baiduPush = ins_push_baidu_urls($INSIGHTS_DIR, $CONFIG, array($remoteUrl));
+
         ins_json_response(200, array(
             'ok' => true,
             'status' => 'published',
             'remote_id' => $origSlug,
             'remote_url' => $remoteUrl,
-            'url' => $remoteUrl
+            'url' => $remoteUrl,
+            'baidu_push' => $baiduPush
         ));
+    }
+
+    if ($method === 'POST' && $agentPath === '/geoflow-agent/v1/push-urls') {
+        $manifest = ins_load_manifest($INSIGHTS_DIR);
+        $baseUrl = rtrim((string)$CONFIG['public_base_url'], '/');
+        $urls = array($baseUrl . '/');
+        foreach ($manifest as $item) {
+            if (isset($item['file_slug'])) {
+                $urls[] = $baseUrl . '/article/' . $item['file_slug'] . '.html';
+            }
+        }
+        $baiduPush = ins_push_baidu_urls($INSIGHTS_DIR, $CONFIG, array_slice($urls, 0, 1));
+        ins_json_response(200, array('ok' => true, 'baidu_push' => $baiduPush));
     }
 
     if ($method === 'POST' && preg_match('#^/geoflow-agent/v1/articles/([^/]+)/delete$#', $agentPath, $dm)) {

@@ -13,5 +13,6 @@ return array(
     'main_site_url' => 'https://www.sensteed.com',
     'key_id' => 'gfk_REPLACE_WITH_CHANNEL_KEY_ID',
     'secret' => 'gfsec_REPLACE_WITH_CHANNEL_SECRET',
+    'baidu_push_token' => 'REPLACE_WITH_BAIDU_PUSH_TOKEN',
     'clock_skew_seconds' => 600
 );
