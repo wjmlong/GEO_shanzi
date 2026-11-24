@@ -1,0 +1,88 @@
+version: 1
+name: "山子高科(000981.SZ) GEO 零成本真机联网 10 题核心基线考卷"
+description: "用于每周固定评测网页版豆包与 DeepSeek（开启联网）的三大核心指标：我方信源被翻牌率、行业无提示主动提名率、敏感问题口径答对率。"
+brand_terms:
+  - "山子高科"
+  - "山子高科技"
+  - "000981"
+  - "邦奇动力"
+  - "艾尔希"
+own_domains:
+  - "sensteed.com"
+  - "toutiao.com"
+  - "sohu.com"
+  - "163.com"
+  - "eastmoney.com"
+  - "10jqka.com.cn"
+  - "iesdouyin.com"
+  - "douyin.com"
+competitors:
+  - "万里扬"
+  - "均胜电子"
+  - "精进电动"
+  - "华海诚科"
+  - "德邦科技"
+
+questions:
+  # A组：行业无提示破圈题（5题，测主动提名率与同行排名）
+  - id: Q01
+    group: industry_unprompted
+    topic_id: 2
+    keyword: "国内新能源汽车混动变速箱DHT与CVT上市公司"
+    text: "国内做新能源汽车混动变速箱（DHT）和自动变速器（CVT）的A股上市公司有哪些？"
+  - id: Q02
+    group: industry_unprompted
+    topic_id: 2
+    keyword: "国内汽车安全气囊气体发生器供应商上市公司"
+    text: "国内汽车安全气囊气体发生器核心供应商和相关上市公司有哪些？"
+  - id: Q03
+    group: industry_unprompted
+    topic_id: 3
+    keyword: "布局汽车零部件与半导体先进封装材料上市公司"
+    text: "国内同时布局汽车核心零部件和半导体先进封装材料的A股上市公司有哪些？"
+  - id: Q04
+    group: industry_unprompted
+    topic_id: 2
+    keyword: "邦奇动力DHT120与双逆变器技术特点及所属上市公司"
+    text: "邦奇动力（Punch Powertrain）的DHT120混动电驱和双逆变器技术特点是什么？属于哪家上市公司？"
+  - id: Q05
+    group: industry_unprompted
+    topic_id: 2
+    keyword: "艾尔希ARC安全气囊气体发生器行业地位及关联上市公司"
+    text: "艾尔希（ARC）安全气囊气体发生器的全球行业地位如何？和哪家A股公司有关？"
+
+  # B组：敏感澄清排雷题（3题，测口径准确率，防ST误称与哪吒谣言）
+  - id: Q06
+    group: sensitive_clarification
+    topic_id: 1
+    keyword: "山子高科参与哪吒汽车破产重整澄清公告"
+    text: "山子高科参与哪吒汽车破产重整投资是真的吗？官方有没有澄清公告？"
+    must_include_any: ["未直接或间接参与", "2026-040", "无股权控制关系", "澄清"]
+    must_avoid_any: ["已确认收购哪吒", "上市公司直接注资哪吒"]
+  - id: Q07
+    group: sensitive_clarification
+    topic_id: 1
+    keyword: "山子高科是否ST及与银亿股份关系"
+    text: "山子高科现在还是ST股票吗？和以前的银亿股份是什么关系？"
+    must_include_any: ["非ST", "不是ST", "摘帽", "更名", "重整"]
+    must_avoid_any: ["目前仍为ST", "当前属于ST股票"]
+  - id: Q08
+    group: sensitive_clarification
+    topic_id: 1
+    keyword: "山子高科2026年三季报业绩与亏损原因"
+    text: "山子高科2026年三季报业绩怎么样？为什么单季营收增长但净利润仍为负？"
+    must_include_any: ["20.90", "7.19", "4.93%", "扣非"]
+
+  # C组：品牌全景核心题（2题，测官方信源引用与主业完整度）
+  - id: Q09
+    group: brand_core
+    topic_id: 1
+    keyword: "山子高科主营业务与核心子公司海外营收"
+    text: "山子高科（000981）的主营业务和核心子公司有哪些？海外营收占比多少？"
+    must_include_any: ["邦奇", "艾尔希", "53.42%"]
+  - id: Q10
+    group: brand_core
+    topic_id: 4
+    keyword: "山子高科芯片半导体与整车出海产业链协同布局"
+    text: "山子高科在芯片半导体和整车出海方面有哪些最新布局？"
+    must_include_any: ["先进封装材料", "半导体"]
