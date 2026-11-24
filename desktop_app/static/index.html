@@ -1,0 +1,3668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/assets/app_icon.ico" />
+  <title>山子高科 · GEO 智能工作台</title>
+  <style>
+    :root {
+      --canvas-bg: linear-gradient(145deg, #F3F6FA 0%, #FAFBFC 55%, #F6F4F6 100%);
+      --glass-bg: rgba(255, 255, 255, 0.76);
+      --glass-bg-strong: rgba(255, 255, 255, 0.88);
+      --glass-bg-soft: rgba(255, 255, 255, 0.48);
+      --glass-border: rgba(255, 255, 255, 0.92);
+      --glass-hairline: rgba(203, 213, 225, 0.62);
+      --glass-shadow: 0 10px 32px rgba(15, 23, 42, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      --glass-shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.032), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+      --radius-lg: 18px;
+      --radius-md: 13px;
+      --radius-sm: 10px;
+
+      --shanzi-red: #D92D20;
+      --shanzi-red-hover: #B91C1C;
+      --shanzi-red-soft: rgba(217, 45, 32, 0.08);
+      --shanzi-red-text: #C81E1E;
+      --shanzi-red-border: rgba(217, 45, 32, 0.18);
+
+      --ink-900: #0F172A;
+      --ink-700: #334155;
+      --ink-600: #475569;
+      --ink-500: #64748B;
+      --ink-400: #94A3B8;
+
+      --mist-pill: rgba(241, 245, 249, 0.85);
+      --mist-capsule-active: linear-gradient(180deg, rgba(226, 236, 246, 0.95) 0%, rgba(218, 230, 243, 0.88) 100%);
+      --jade-dot: #10B981;
+      --jade-soft: rgba(16, 185, 129, 0.08);
+      --jade-text: #047857;
+      --jade-border: rgba(16, 185, 129, 0.20);
+
+      --font-sans: "Inter", "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      color: var(--ink-900);
+      background: var(--canvas-bg);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+
+    /* Ambient luminous porcelain backdrop */
+    .ambient-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 62% 14%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 56%),
+        radial-gradient(circle at 16% 84%, rgba(217, 45, 32, 0.032) 0%, rgba(217, 45, 32, 0) 44%),
+        var(--canvas-bg);
+    }
+
+    .crystal-horse-bg {
+      position: fixed;
+      left: 0;
+      bottom: 26px;
+      width: 575px;
+      max-width: 45vw;
+      height: auto;
+      opacity: 0.45;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+      -webkit-mask-image: radial-gradient(ellipse 94% 92% at 24% 80%, #000 60%, transparent 100%);
+      mask-image: radial-gradient(ellipse 94% 92% at 24% 80%, #000 60%, transparent 100%);
+    }
+
+    /* Custom subtle scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.34);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.52);
+    }
+
+    .num {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .svg-icon {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      flex-shrink: 0;
+    }
+    .svg-icon-sm {
+      width: 14px;
+      height: 14px;
+    }
+    .svg-icon-lg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* App Shell */
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      gap: 14px;
+      width: 100%;
+      height: calc(100vh - 30px);
+      padding: 12px 16px 10px 14px;
+    }
+
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(165%);
+      -webkit-backdrop-filter: blur(24px) saturate(165%);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      border-radius: var(--radius-lg);
+    }
+
+    .glass-subcard {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--glass-hairline);
+      box-shadow: var(--glass-shadow-sm);
+      border-radius: var(--radius-md);
+    }
+
+    /* Left Floating Frosted Sidebar (248px, Haoshi desktop style) */
+    .sidebar {
+      width: 248px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .sidebar-brand-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 8px 2px 6px;
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .pony-avatar-sm {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      padding: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.98);
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pony-avatar-sm img,
+    .pony-avatar-hero img,
+    .pony-avatar-xs img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 650;
+      color: var(--ink-900);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .stock-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--shanzi-red-soft);
+      color: var(--shanzi-red-text);
+      border: 1px solid var(--shanzi-red-border);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Sidebar Navigation Island */
+    .sidebar-nav-card {
+      padding: 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .nav-compose-btn {
+      width: 100%;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.88);
+      background: rgba(235, 241, 248, 0.72);
+      color: var(--ink-900);
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      margin-bottom: 4px;
+    }
+    .nav-compose-btn .plus-icon {
+      color: var(--shanzi-red);
+      stroke-width: 2;
+    }
+    .nav-compose-btn:hover {
+      background: rgba(226, 236, 246, 0.92);
+    }
+    .nav-compose-btn.active {
+      background: var(--mist-capsule-active);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    }
+
+    .nav-item {
+      width: 100%;
+      height: 37px;
+      border-radius: 11px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-700);
+      font-family: inherit;
+      font-size: 13.2px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .nav-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .nav-item:hover {
+      background: rgba(241, 245, 249, 0.78);
+      color: var(--ink-900);
+    }
+    .nav-item.active {
+      background: var(--mist-capsule-active);
+      border-color: rgba(255, 255, 255, 0.88);
+      color: var(--ink-900);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .nav-item.active .svg-icon {
+      color: var(--shanzi-red);
+    }
+    .nav-count {
+      font-size: 11px;
+      color: var(--ink-500);
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(203, 213, 225, 0.55);
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Sidebar Middle Recent Feed Island (airy translucent glass over crystal horse) */
+    .sidebar-feed-card {
+      flex: 1;
+      min-height: 0;
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      background: var(--glass-bg-soft);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .feed-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-500);
+      padding: 0 2px;
+    }
+
+    .feed-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .feed-group-label {
+      font-size: 11px;
+      color: var(--ink-400);
+      padding: 4px 2px 2px;
+      font-weight: 500;
+    }
+
+    .feed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--ink-700);
+      font-size: 12.2px;
+      transition: background 0.14s ease;
+    }
+    .feed-row:hover {
+      background: rgba(255, 255, 255, 0.68);
+      color: var(--ink-900);
+    }
+    .feed-ring {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      border: 1.4px solid var(--ink-400);
+      flex-shrink: 0;
+    }
+    .feed-ring.done {
+      border-color: var(--jade-dot);
+      background: rgba(16, 185, 129, 0.22);
+    }
+    .feed-ring.pending {
+      border-color: var(--shanzi-red);
+    }
+    .feed-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    /* Sidebar Bottom Utility Dock (mirrors Haoshi bottom-left dock) */
+    .sidebar-dock {
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.68);
+    }
+
+    .dock-tools-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2px;
+    }
+
+    .dock-icon-btn {
+      width: 32px;
+      height: 30px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-600);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .dock-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.85);
+      border-color: var(--glass-hairline);
+      color: var(--ink-900);
+    }
+
+    .browser-launch-pill {
+      width: 100%;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.16s ease;
+    }
+    .browser-launch-pill:hover {
+      border-color: var(--shanzi-red-border);
+      background: #FFFFFF;
+      transform: translateY(-1px);
+    }
+    .browser-pill-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.8px;
+      font-weight: 600;
+      color: var(--ink-900);
+    }
+    .pony-avatar-xs {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #F8FAFC;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .mini-status-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--mist-pill);
+      color: var(--ink-600);
+      border: 1px solid rgba(203, 213, 225, 0.6);
+    }
+    .mini-status-tag.ready {
+      background: var(--jade-soft);
+      color: var(--jade-text);
+      border-color: var(--jade-border);
+    }
+
+    /* Main Stage */
+    .main-stage {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .stage-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+
+    .topbar-title-capsule {
+      flex: 1;
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.028);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .topbar-view-name {
+      font-size: 14px;
+      font-weight: 650;
+      color: var(--ink-900);
+      white-space: nowrap;
+    }
+    .topbar-divider {
+      width: 1px;
+      height: 13px;
+      background: rgba(148, 163, 184, 0.45);
+      flex-shrink: 0;
+    }
+    .topbar-view-sub {
+      font-size: 12.2px;
+      color: var(--ink-500);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .capsule-btn {
+      height: 38px;
+      padding: 0 13px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.032);
+      color: var(--ink-700);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 550;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .capsule-btn:hover {
+      background: #FFFFFF;
+      color: var(--ink-900);
+      border-color: rgba(203, 213, 225, 0.85);
+    }
+
+    .stage-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .view-section {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 8px;
+      animation: viewFadeIn 0.16s ease-out;
+    }
+    .view-section.active {
+      display: flex;
+    }
+
+    @keyframes viewFadeIn {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Buttons & Pills */
+    .btn {
+      height: 35px;
+      padding: 0 14px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #E13326 0%, var(--shanzi-red) 100%);
+      color: #FFFFFF;
+      border-color: rgba(185, 28, 28, 0.3);
+      box-shadow: 0 6px 16px rgba(217, 45, 32, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--shanzi-red-hover);
+      box-shadow: 0 8px 20px rgba(185, 28, 28, 0.26);
+    }
+    .btn-glass {
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--ink-700);
+      border-color: var(--glass-hairline);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.025);
+    }
+    .btn-glass:hover:not(:disabled) {
+      background: #FFFFFF;
+      color: var(--ink-900);
+      border-color: rgba(148, 163, 184, 0.65);
+    }
+    .btn-red-soft {
+      background: var(--shanzi-red-soft);
+      color: var(--shanzi-red-text);
+      border-color: var(--shanzi-red-border);
+    }
+    .btn-red-soft:hover:not(:disabled) {
+      background: rgba(217, 45, 32, 0.13);
+    }
+    .btn-sm {
+      height: 28px;
+      padding: 0 9px;
+      font-size: 12px;
+      border-radius: 8px;
+      font-weight: 550;
+      gap: 4px;
+    }
+    .btn-xs {
+      height: 24px;
+      padding: 0 8px;
+      font-size: 11.5px;
+      border-radius: 7px;
+      font-weight: 550;
+      gap: 4px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .pill-red {
+      background: var(--shanzi-red-soft);
+      color: var(--shanzi-red-text);
+      border: 1px solid var(--shanzi-red-border);
+    }
+    .pill-mist {
+      background: var(--mist-pill);
+      color: var(--ink-600);
+      border: 1px solid rgba(203, 213, 225, 0.62);
+    }
+    .pill-jade {
+      background: var(--jade-soft);
+      color: var(--jade-text);
+      border: 1px solid var(--jade-border);
+    }
+
+    /* Form Controls */
+    .input, .select, .textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(203, 213, 225, 0.72);
+      border-radius: 10px;
+      color: var(--ink-900);
+      font-family: inherit;
+      font-size: 13px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .input, .select {
+      height: 35px;
+      padding: 0 11px;
+    }
+    .textarea {
+      padding: 10px 12px;
+      line-height: 1.62;
+      resize: vertical;
+    }
+    .input:focus, .select:focus, .textarea:focus {
+      outline: none;
+      background: #FFFFFF;
+      border-color: rgba(217, 45, 32, 0.45);
+      box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.08);
+    }
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-600);
+      margin-bottom: 5px;
+    }
+
+    /* Segmented Glass Switch */
+    .seg-bar {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px;
+      border-radius: 11px;
+      background: rgba(226, 232, 240, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      gap: 3px;
+    }
+    .seg-btn {
+      height: 30px;
+      padding: 0 13px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-600);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 550;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .seg-btn:hover {
+      color: var(--ink-900);
+    }
+    .seg-btn.active {
+      background: #FFFFFF;
+      color: var(--ink-900);
+      font-weight: 600;
+      border-color: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 7px rgba(15, 23, 42, 0.06);
+    }
+    .seg-btn.active .svg-icon {
+      color: var(--shanzi-red);
+    }
+
+    /* =========================================
+       VIEW 1: 创作与质检派发
+       ========================================= */
+    .hero-strip {
+      display: grid;
+      grid-template-columns: minmax(260px, 1.05fr) minmax(0, 2.25fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .hero-brand-card {
+      padding: 10px 15px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .pony-avatar-hero {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      padding: 4px;
+      border: 1.5px solid #FFFFFF;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.075), 0 0 0 1px rgba(15, 23, 42, 0.05);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .hero-copy h1 {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--ink-900);
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    .hero-copy p {
+      font-size: 12px;
+      color: var(--ink-500);
+      line-height: 1.45;
+    }
+
+    .kpi-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .kpi-card {
+      padding: 10px 13px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 3px;
+    }
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--ink-500);
+      font-size: 12px;
+      font-weight: 550;
+    }
+    .kpi-val {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink-900);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-val.accent {
+      color: var(--shanzi-red);
+    }
+    .kpi-sub {
+      font-size: 11.2px;
+      color: var(--ink-400);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .compose-studio-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.32fr) minmax(370px, 0.96fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .studio-card {
+      padding: 12px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 650;
+      color: var(--ink-900);
+    }
+    .card-title .svg-icon {
+      color: var(--shanzi-red);
+    }
+
+    .ai-writer-box {
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      background: rgba(248, 250, 252, 0.78);
+      border: 1px solid rgba(203, 213, 225, 0.62);
+      border-radius: 12px;
+    }
+
+    .ai-row-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .style-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .style-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .style-chip {
+      height: 29px;
+      padding: 0 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(203, 213, 225, 0.72);
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--ink-600);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 550;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .style-chip.active {
+      background: var(--shanzi-red-soft);
+      color: var(--shanzi-red-text);
+      border-color: var(--shanzi-red-border);
+      font-weight: 600;
+    }
+
+    /* Solid Hairline Glass Dropzone */
+    .dropzone-solid {
+      border: 1px solid rgba(203, 213, 225, 0.78);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(244, 247, 251, 0.68) 100%);
+      border-radius: 12px;
+      padding: 9px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .dropzone-solid.expanded {
+      padding: 18px 16px;
+    }
+    .dropzone-solid:hover,
+    .dropzone-solid.dragover {
+      border-color: rgba(217, 45, 32, 0.42);
+      background: rgba(217, 45, 32, 0.035);
+    }
+    .dropzone-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .dropzone-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: var(--shanzi-red-soft);
+      color: var(--shanzi-red);
+      border: 1px solid var(--shanzi-red-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .dropzone-text strong {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--ink-900);
+    }
+    .dropzone-text span {
+      font-size: 11.5px;
+      color: var(--ink-500);
+    }
+
+    .editor-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--ink-500);
+    }
+
+    .editor-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 2px;
+    }
+
+    /* Right Studio Stack: Compliance Drawer + Dispatch Card */
+    .right-studio-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .score-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      background: rgba(248, 250, 252, 0.85);
+      border: 1px solid rgba(203, 213, 225, 0.65);
+    }
+    .score-big {
+      font-size: 30px;
+      font-weight: 750;
+      color: var(--ink-900);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .score-big small {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--ink-400);
+      margin-left: 2px;
+    }
+    .score-summary-col {
+      flex: 1;
+      min-width: 0;
+    }
+    .score-summary-text {
+      font-size: 11.8px;
+      color: var(--ink-600);
+      margin-top: 3px;
+      line-height: 1.42;
+    }
+
+    .dim-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .dim-card {
+      padding: 6px 9px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(203, 213, 225, 0.58);
+    }
+    .dim-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ink-700);
+      margin-bottom: 3px;
+    }
+    .dim-bar-track {
+      width: 100%;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(203, 213, 225, 0.45);
+      overflow: hidden;
+      margin-bottom: 3px;
+    }
+    .dim-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--shanzi-red);
+    }
+    .dim-comment {
+      font-size: 10.8px;
+      color: var(--ink-500);
+      line-height: 1.32;
+    }
+
+    .issues-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .issues-list:empty {
+      display: none;
+    }
+    .issue-card {
+      padding: 9px 11px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(217, 45, 32, 0.20);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .issue-row-label {
+      font-weight: 600;
+      color: var(--ink-700);
+    }
+    .issue-quote {
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(217, 45, 32, 0.05);
+      color: var(--shanzi-red-text);
+      font-size: 11.5px;
+    }
+
+    /* Multi-platform Selector Grid (CH-01..CH-09) */
+    .plat-select-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .plat-check-card {
+      padding: 6px 8px;
+      border-radius: 9px;
+      border: 1px solid rgba(203, 213, 225, 0.68);
+      background: rgba(255, 255, 255, 0.8);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      transition: all 0.14s ease;
+      user-select: none;
+    }
+    .plat-check-card:hover {
+      background: #FFFFFF;
+      border-color: rgba(148, 163, 184, 0.85);
+    }
+    .plat-check-card.selected {
+      background: rgba(217, 45, 32, 0.055);
+      border-color: rgba(217, 45, 32, 0.42);
+      box-shadow: inset 0 0 0 1px rgba(217, 45, 32, 0.12);
+    }
+    .plat-check-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 650;
+      color: var(--ink-500);
+      font-variant-numeric: tabular-nums;
+    }
+    .plat-check-card.selected .plat-check-top {
+      color: var(--shanzi-red-text);
+    }
+    .check-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1.4px solid rgba(148, 163, 184, 0.8);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #FFFFFF;
+      color: transparent;
+    }
+    .plat-check-card.selected .check-dot {
+      background: var(--shanzi-red);
+      border-color: var(--shanzi-red);
+      color: #FFFFFF;
+    }
+    .plat-check-name {
+      font-size: 12.2px;
+      font-weight: 600;
+      color: var(--ink-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .plat-check-sub {
+      font-size: 10.5px;
+      color: var(--ink-400);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .action-mode-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .action-radio-pill {
+      padding: 7px 8px;
+      border-radius: 9px;
+      border: 1px solid rgba(203, 213, 225, 0.72);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink-600);
+      font-size: 11.3px;
+      font-weight: 550;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .action-radio-pill.active {
+      background: var(--shanzi-red-soft);
+      color: var(--shanzi-red-text);
+      border-color: var(--shanzi-red-border);
+      font-weight: 650;
+    }
+
+    /* =========================================
+       VIEW 2: 全平台发稿台账
+       ========================================= */
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .toolbar-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      background: rgba(255, 255, 255, 0.76);
+    }
+    table.glass-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .glass-table th {
+      padding: 10px 12px;
+      font-size: 11.8px;
+      font-weight: 650;
+      color: var(--ink-500);
+      background: rgba(241, 245, 249, 0.76);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+      white-space: nowrap;
+    }
+    .glass-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.65);
+      vertical-align: middle;
+      font-size: 12.8px;
+    }
+    .glass-table tr:last-child td {
+      border-bottom: none;
+    }
+    .glass-table tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .ledger-title-text {
+      font-weight: 600;
+      color: var(--ink-900);
+      margin-bottom: 5px;
+      line-height: 1.4;
+    }
+    .ledger-quick-ops {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .receipt-inline {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 220px;
+    }
+    .receipt-inline .input {
+      height: 28px;
+      font-size: 12px;
+      padding: 0 8px;
+      border-radius: 7px;
+    }
+
+    /* =========================================
+       VIEW 3: 九大发布阵地
+       ========================================= */
+    .matrix-grid-9 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .matrix-card {
+      padding: 15px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 11px;
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .matrix-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.065), inset 0 1px 0 rgba(255, 255, 255, 0.98);
+    }
+    .matrix-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .matrix-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink-900);
+      margin-top: 4px;
+    }
+    .matrix-desc {
+      font-size: 12px;
+      color: var(--ink-500);
+      line-height: 1.45;
+      min-height: 34px;
+    }
+    .matrix-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 11px;
+      background: rgba(241, 245, 249, 0.72);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      text-align: center;
+    }
+    .m-stat-val {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink-900);
+      font-variant-numeric: tabular-nums;
+    }
+    .m-stat-lbl {
+      font-size: 11px;
+      color: var(--ink-500);
+    }
+
+    /* =========================================
+       VIEW 4: AI 可见性成绩单
+       ========================================= */
+    .scorecard-kpi-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .core-metric-card {
+      padding: 15px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .core-metric-val {
+      font-size: 30px;
+      font-weight: 750;
+      color: var(--ink-900);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+    .scorecard-split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.95fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .exam-q-item {
+      padding: 9px 11px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .exam-q-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      max-height: 390px;
+      overflow-y: auto;
+    }
+
+    /* =========================================
+       VIEW 5: 资产库与配置
+       ========================================= */
+    .asset-subpanel {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .asset-subpanel.active {
+      display: flex;
+    }
+    .kb-layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .kb-nav-item {
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(203, 213, 225, 0.65);
+      background: rgba(255, 255, 255, 0.75);
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .kb-nav-item.active {
+      background: #FFFFFF;
+      border-color: rgba(217, 45, 32, 0.42);
+      box-shadow: 0 4px 14px rgba(217, 45, 32, 0.07);
+    }
+    .kw-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .kw-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(203, 213, 225, 0.72);
+      font-size: 12.2px;
+      color: var(--ink-700);
+    }
+    .kw-del-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-400);
+      cursor: pointer;
+      display: inline-flex;
+      padding: 1px;
+      border-radius: 50%;
+    }
+    .kw-del-btn:hover {
+      color: var(--shanzi-red);
+      background: var(--shanzi-red-soft);
+    }
+
+    .settings-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    /* Bottom Frosted Status Bar (30px exact match to Haoshi reference) */
+    .status-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 30px;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border-top: 1px solid rgba(226, 232, 240, 0.85);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.8px;
+      color: var(--ink-500);
+      user-select: none;
+    }
+    .status-left, .status-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ink-400);
+      box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
+    }
+    .status-dot.online {
+      background: var(--jade-dot);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+    }
+    .status-sep {
+      color: var(--ink-400);
+    }
+    .status-shortcut {
+      cursor: pointer;
+      padding: 1px 6px;
+      border-radius: 5px;
+      transition: background 0.14s ease;
+    }
+    .status-shortcut:hover {
+      background: rgba(226, 232, 240, 0.65);
+      color: var(--ink-900);
+    }
+
+    /* Toast Notification */
+    .toast-stack {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast-item {
+      pointer-events: auto;
+      min-width: 260px;
+      max-width: 440px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(203, 213, 225, 0.85);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.10);
+      color: var(--ink-900);
+      font-size: 12.8px;
+      font-weight: 550;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      animation: viewFadeIn 0.18s ease-out;
+    }
+    .toast-item.error {
+      border-color: rgba(217, 45, 32, 0.35);
+      color: var(--shanzi-red-text);
+    }
+
+    @media (max-width: 1180px) {
+      .hero-strip {
+        grid-template-columns: 1fr;
+      }
+      .compose-studio-grid,
+      .scorecard-split,
+      .kb-layout,
+      .settings-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-canvas"></div>
+  <img src="/assets/crystal_horse_bg.png" alt="" class="crystal-horse-bg" onerror="this.style.display='none'" />
+
+  <div class="toast-stack" id="toastStack"></div>
+
+  <div class="app-shell">
+    <!-- Left Floating Frosted-Glass Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand-bar">
+        <div class="brand-left">
+          <div class="pony-avatar-sm">
+            <img src="/assets/pony_avatar.png" alt="山子小马" onerror="this.style.display='none'" />
+          </div>
+          <span class="brand-title">山子高科 · GEO</span>
+        </div>
+        <span class="stock-pill num">000981</span>
+      </div>
+
+      <!-- Primary Navigation Island -->
+      <nav class="glass-panel sidebar-nav-card" aria-label="主导航">
+        <button type="button" class="nav-compose-btn active" data-view="compose" onclick="switchView('compose')">
+          <svg class="svg-icon svg-icon-lg plus-icon" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          <span>创作与质检派发</span>
+        </button>
+
+        <button type="button" class="nav-item" data-view="ledger" onclick="switchView('ledger')">
+          <span class="nav-item-left">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
+              <path d="M3 10h18M9 10v10"></path>
+            </svg>
+            <span>全平台发稿台账</span>
+          </span>
+          <span class="nav-count num" id="navLedgerCount">0</span>
+        </button>
+
+        <button type="button" class="nav-item" data-view="matrix" onclick="switchView('matrix')">
+          <span class="nav-item-left">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+            </svg>
+            <span>九大发布阵地</span>
+          </span>
+          <span class="nav-count num" id="navMatrixCount">9</span>
+        </button>
+
+        <button type="button" class="nav-item" data-view="scorecard" onclick="switchView('scorecard')">
+          <span class="nav-item-left">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M18 20V10M12 20V4M6 20v-6"></path>
+            </svg>
+            <span>AI 可见性成绩单</span>
+          </span>
+        </button>
+
+        <button type="button" class="nav-item" data-view="assets" onclick="switchView('assets')">
+          <span class="nav-item-left">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+            </svg>
+            <span>资产库与配置</span>
+          </span>
+        </button>
+      </nav>
+
+      <!-- Recent Ledger Pulse Island -->
+      <div class="sidebar-feed-card">
+        <div class="feed-header">
+          <span>近期台账动态</span>
+          <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+            <path d="M6 9l6 6 6-6"></path>
+          </svg>
+        </div>
+        <div class="feed-list" id="sidebarFeedList">
+          <div class="feed-group-label">同步加载中</div>
+        </div>
+      </div>
+
+      <!-- Bottom Quick Action Dock -->
+      <div class="glass-panel sidebar-dock">
+        <div class="dock-tools-row">
+          <button type="button" class="dock-icon-btn" title="启动内置便携浏览器" onclick="openPortableBrowser({})">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M3.6 9h16.8M3.6 15h16.8M12 3a14.5 14.5 0 0 0 0 18M12 3a14.5 14.5 0 0 1 0 18"></path>
+            </svg>
+          </button>
+          <button type="button" class="dock-icon-btn" title="测试官网直发接口" onclick="testOfficialHealth()">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+          </button>
+          <button type="button" class="dock-icon-btn" title="导出 CSV 台账" onclick="exportLedgerCsv()">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <path d="M7 10l5 5 5-5M12 15V3"></path>
+            </svg>
+          </button>
+          <button type="button" class="dock-icon-btn" title="AI 可见性周测" onclick="switchView('scorecard')">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+          </button>
+          <button type="button" class="dock-icon-btn" title="系统连接配置" onclick="switchView('assets', 'settings')">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1.02 1.51 1H21a2 2 0 1 1 0 4h-.09c-.74.02-1.25.44-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <button type="button" class="browser-launch-pill" onclick="openPortableBrowser({})">
+          <span class="browser-pill-left">
+            <span class="pony-avatar-xs">
+              <img src="/assets/pony_avatar.png" alt="" onerror="this.style.display='none'" />
+            </span>
+            <span>内置登录浏览器</span>
+          </span>
+          <span class="mini-status-tag" id="sidebarBrowserBadge">待启动</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Right Main Glass Stage -->
+    <main class="main-stage">
+      <header class="stage-topbar">
+        <div class="topbar-title-capsule">
+          <span class="topbar-view-name" id="stageViewTitle">创作与质检派发</span>
+          <span class="topbar-divider"></span>
+          <span class="topbar-view-sub" id="stageViewSub">官方事实库锚定生成 · 4维信披合规评审 · 官网1秒静态化与便携内核0 Token填稿</span>
+        </div>
+
+        <div class="topbar-actions">
+          <button type="button" class="capsule-btn" onclick="loadState(true)">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <path d="M23 4v6h-6M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>刷新数据</span>
+          </button>
+          <button type="button" class="capsule-btn" onclick="switchView('assets', 'settings')">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>山子高科 · 信披工作台</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="stage-scroll">
+        <!-- =======================================================
+             VIEW 1: 创作与质检派发
+             ======================================================= -->
+        <section class="view-section active" id="view-compose">
+          <div class="hero-strip">
+            <div class="glass-panel hero-brand-card">
+              <div class="pony-avatar-hero">
+                <img src="/assets/pony_avatar.png" alt="山子高科小马" onerror="this.style.display='none'" />
+              </div>
+              <div class="hero-copy">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
+                  <h1>好事 · 标准答案中枢</h1>
+                  <span class="pill pill-red">官方权威口径</span>
+                </div>
+                <p>覆盖邦奇动力、艾尔希 ARC 与半导体材料三大事实基准，杜绝违规表述与过时称谓。</p>
+              </div>
+            </div>
+
+            <div class="kpi-grid-4">
+              <div class="glass-panel kpi-card">
+                <div class="kpi-top">
+                  <span>已上线链接</span>
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                </div>
+                <div class="kpi-val num" id="kpiPublished">0</div>
+                <div class="kpi-sub">全网真实可检索 URL</div>
+              </div>
+
+              <div class="glass-panel kpi-card">
+                <div class="kpi-top">
+                  <span>待发外网工单</span>
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 3"></path>
+                  </svg>
+                </div>
+                <div class="kpi-val num" id="kpiPending">0</div>
+                <div class="kpi-sub">待自动填稿或回填链接</div>
+              </div>
+
+              <div class="glass-panel kpi-card">
+                <div class="kpi-top">
+                  <span>AI 翻牌 / 引用</span>
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"></path>
+                  </svg>
+                </div>
+                <div class="kpi-val num" id="kpiCitations">0</div>
+                <div class="kpi-sub" id="kpiCitedUrlsSub">命中 0 篇上线文章</div>
+              </div>
+
+              <div class="glass-panel kpi-card">
+                <div class="kpi-top">
+                  <span>链接被翻牌率</span>
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <path d="M23 6l-9.5 9.5-5-5L1 18"></path>
+                    <path d="M17 6h6v6"></path>
+                  </svg>
+                </div>
+                <div class="kpi-val accent num" id="kpiCitationRate">0.0%</div>
+                <div class="kpi-sub">豆包 / DeepSeek 联网引用占比</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="compose-studio-grid">
+            <!-- Left Studio Card: Authoring + Dropzone + Editor + Inspect CTA -->
+            <div class="glass-panel studio-card">
+              <div class="card-head">
+                <div class="seg-bar" role="tablist" aria-label="创作来源切换">
+                  <button type="button" class="seg-btn active" id="modeBtnAi" onclick="setComposeMode('ai')">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                      <path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"></path>
+                    </svg>
+                    <span>AI 标准答案写稿</span>
+                  </button>
+                  <button type="button" class="seg-btn" id="modeBtnUpload" onclick="setComposeMode('upload')">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"></path>
+                    </svg>
+                    <span>自写稿拖入质检</span>
+                  </button>
+                  <button type="button" class="seg-btn" id="modeBtnExisting" onclick="setComposeMode('existing')">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    <span>选已存稿件</span>
+                  </button>
+                </div>
+                <span class="pill pill-mist" id="dispatchSourceBadge">当前模式：新稿入库</span>
+              </div>
+
+              <!-- Mode A: AI Standard Writer -->
+              <div class="ai-writer-box" id="panelModeAi">
+                <div class="ai-row-2">
+                  <div>
+                    <label class="field-label" for="topicSelect36">从 36 标准母题库选定命题</label>
+                    <select id="topicSelect36" class="select" onchange="onPickTopicDropdown()">
+                      <option value="">-- 选择官方标准母题（自动填入右侧命题框） --</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="field-label" for="customTopicInput">本篇写作命题（支持自定义修改）</label>
+                    <input id="customTopicInput" type="text" class="input" placeholder="输入或从左侧选择山子高科核心业务/澄清命题..." />
+                  </div>
+                </div>
+                <div class="style-row">
+                  <div class="style-pills">
+                    <button type="button" class="style-chip active" data-style="long" onclick="setAiStyle('long')">深度产业长文</button>
+                    <button type="button" class="style-chip" data-style="qa" onclick="setAiStyle('qa')">股吧问答澄清卡</button>
+                    <button type="button" class="style-chip" data-style="douyin" onclick="setAiStyle('douyin')">抖音200字简介</button>
+                  </div>
+                  <button type="button" class="btn btn-red-soft btn-sm" id="btnAiGenerate" onclick="handleAiGenerate()">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"></path>
+                    </svg>
+                    <span>生成标准答案初稿</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mode C: Existing Saved Articles -->
+              <div class="ai-writer-box" id="panelModeExisting" style="display:none;">
+                <div style="display:flex;align-items:flex-end;gap:8px;">
+                  <div style="flex:1;">
+                    <label class="field-label" for="existingArticleSelect">选择本地已存母稿（直接复用派发或载入微调）</label>
+                    <select id="existingArticleSelect" class="select" onchange="onSelectExistingArticle()"></select>
+                  </div>
+                  <button type="button" class="btn btn-glass" onclick="loadExistingIntoEditor()">载入编辑器预览</button>
+                </div>
+              </div>
+
+              <!-- Solid Hairline Glass Dropzone (.md / .txt) -->
+              <div class="dropzone-solid" id="mdDropzone" onclick="document.getElementById('mdFileInput').click()">
+                <input type="file" id="mdFileInput" accept=".md,.markdown,.txt" style="display:none;" onchange="handleFileSelect(event)" />
+                <div class="dropzone-left">
+                  <div class="dropzone-icon-box">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <path d="M17 8l-5-5-5 5M12 3v12"></path>
+                    </svg>
+                  </div>
+                  <div class="dropzone-text">
+                    <strong>拖入本地 .md / .txt 稿件，或点击选择文件导入</strong>
+                    <span>自动识别首行 Markdown 标题与正文结构，支持信披合规质检</span>
+                  </div>
+                </div>
+                <span class="pill pill-mist">UTF-8 解析</span>
+              </div>
+
+              <!-- Unified Title & Body Editor -->
+              <div>
+                <div class="editor-meta-row" style="margin-bottom:4px;">
+                  <label class="field-label" for="composeTitle" style="margin:0;">文章标题</label>
+                  <span class="num" id="titleCharCount">0 字（头条建议 ≤30 字）</span>
+                </div>
+                <input id="composeTitle" type="text" class="input" placeholder="请输入文章标题，例如：山子高科(000981.SZ)汽车零部件主业深度拆解：邦奇动力与艾尔希ARC全球化底座" oninput="onEditorManualChange()" />
+              </div>
+
+              <div>
+                <div class="editor-meta-row" style="margin-bottom:4px;">
+                  <label class="field-label" for="composeContent" style="margin:0;">Markdown 正文内容</label>
+                  <span class="num" id="bodyCharCount">0 字</span>
+                </div>
+                <textarea id="composeContent" class="textarea" rows="8" placeholder="在此输入或由 AI 生成 Markdown 标准答案正文。所有财务与业务数据须注明对应定期报告或临时公告编号..." oninput="onEditorManualChange()"></textarea>
+              </div>
+
+              <div class="editor-footer">
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="btn btn-glass btn-sm" onclick="fillSampleDraft()">填入合规示例稿</button>
+                  <button type="button" class="btn btn-glass btn-sm" onclick="clearEditor()">清空</button>
+                </div>
+                <button type="button" class="btn btn-primary" id="btnInspect" onclick="handleAiInspect()">
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9 12l2 2 4-4"></path>
+                  </svg>
+                  <span>开始合规质检打分</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Studio Stack: Compliance Report Drawer + Multi-Platform Dispatch -->
+            <div class="right-studio-stack">
+              <!-- Compliance Report Drawer -->
+              <div class="glass-panel studio-card" id="inspectDrawer">
+                <div class="card-head">
+                  <div class="card-title">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                      <path d="M9 11l3 3L22 4"></path>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    <span>信披合规与 GEO 质检报告</span>
+                  </div>
+                  <span class="pill pill-mist" id="inspectStatusPill">待质检评审（≥85分准发）</span>
+                </div>
+
+                <div class="score-banner">
+                  <div class="score-big num" id="inspectScoreNum">--<small>/ 100</small></div>
+                  <div class="score-summary-col">
+                    <div style="font-size:12.5px;font-weight:650;color:var(--ink-900);" id="inspectHeadline">四维上市公司信披准绳校验</div>
+                    <div class="score-summary-text" id="inspectSummaryText">点击左侧「开始合规质检打分」，系统将对照官方事实基准库（S1-S6）逐项排查过时称谓、未披露预测与数据失真。</div>
+                  </div>
+                </div>
+
+                <div class="dim-grid-4" id="inspectDimensionsGrid">
+                  <div class="dim-card">
+                    <div class="dim-head"><span>事实与公告一致性</span><span class="num">--</span></div>
+                    <div class="dim-bar-track"><div class="dim-bar-fill" style="width:0%"></div></div>
+                    <div class="dim-comment">核验财务数据与公告编号</div>
+                  </div>
+                  <div class="dim-card">
+                    <div class="dim-head"><span>信披与广告法合规</span><span class="num">--</span></div>
+                    <div class="dim-bar-track"><div class="dim-bar-fill" style="width:0%"></div></div>
+                    <div class="dim-comment">拦截极限词与股价预测</div>
+                  </div>
+                  <div class="dim-card">
+                    <div class="dim-head"><span>业务与品牌锚点</span><span class="num">--</span></div>
+                    <div class="dim-bar-track"><div class="dim-bar-fill" style="width:0%"></div></div>
+                    <div class="dim-comment">邦奇动力/艾尔希ARC锚点</div>
+                  </div>
+                  <div class="dim-card">
+                    <div class="dim-head"><span>GEO结构与AI易抓度</span><span class="num">--</span></div>
+                    <div class="dim-bar-track"><div class="dim-bar-fill" style="width:0%"></div></div>
+                    <div class="dim-comment">结论前置与结构化段落</div>
+                  </div>
+                </div>
+
+                <div class="issues-list" id="inspectIssuesList"></div>
+              </div>
+
+              <!-- Multi-Platform Dispatch Panel -->
+              <div class="glass-panel studio-card">
+                <div class="card-head">
+                  <div class="card-title">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                      <path d="M22 2L11 13"></path>
+                      <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                    </svg>
+                    <span>九大阵地多选派发</span>
+                  </div>
+                  <div style="display:flex;gap:6px;">
+                    <button type="button" class="btn btn-glass btn-xs" onclick="selectCorePlatforms()">选核心4渠</button>
+                    <button type="button" class="btn btn-glass btn-xs" onclick="toggleAllPlatforms()">全选 / 反选</button>
+                  </div>
+                </div>
+
+                <div class="plat-select-grid" id="dispatchPlatformGrid"></div>
+
+                <div>
+                  <span class="field-label">外部阵地执行方式（官网 CH-01 自动走 1 秒签名直发）</span>
+                  <div class="action-mode-list" id="externalActionGroup">
+                    <div class="action-radio-pill active" data-action="draft" onclick="setExternalAction('draft')">内置浏览器自动填草稿 · 0 Token</div>
+                    <div class="action-radio-pill" data-action="publish" onclick="setExternalAction('publish')">内置浏览器自动直发 · 0 Token</div>
+                    <div class="action-radio-pill" data-action="ledger_only" onclick="setExternalAction('ledger_only')">仅记入待发台账</div>
+                  </div>
+                </div>
+
+                <button type="button" class="btn btn-primary" style="width:100%;height:38px;" id="btnDispatch" onclick="handleDispatch()">
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                  </svg>
+                  <span>确认一键派发</span>
+                </button>
+
+                <div id="dispatchResultBox" style="display:none;font-size:12px;padding:9px 11px;border-radius:10px;background:rgba(248,250,252,0.9);border:1px solid var(--glass-hairline);color:var(--ink-700);"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =======================================================
+             VIEW 2: 全平台发稿台账
+             ======================================================= -->
+        <section class="view-section" id="view-ledger">
+          <div class="glass-panel studio-card">
+            <div class="toolbar-row">
+              <div class="toolbar-filters">
+                <select id="ledgerPlatformFilter" class="select" style="width:190px;" onchange="renderLedgerTable()">
+                  <option value="">全部发布平台（CH-01~09）</option>
+                </select>
+                <select id="ledgerStatusFilter" class="select" style="width:165px;" onchange="renderLedgerTable()">
+                  <option value="">全部状态</option>
+                  <option value="completed">已上线（有真实链接）</option>
+                  <option value="pending">待发 / 草稿填报中</option>
+                </select>
+                <input id="ledgerSearchInput" type="text" class="input" style="width:240px;" placeholder="检索标题、平台或真实 URL..." oninput="renderLedgerTable()" />
+              </div>
+
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="pill pill-mist num" id="ledgerFilteredCount">共 0 条记录</span>
+                <button type="button" class="btn btn-primary btn-sm" onclick="exportLedgerCsv()">
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <path d="M7 10l5 5 5-5M12 15V3"></path>
+                  </svg>
+                  <span>导出 Excel (.csv)</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="glass-table">
+                <thead>
+                  <tr>
+                    <th style="width:52px;">#</th>
+                    <th style="width:146px;">发布平台</th>
+                    <th>文章标题与快捷操作</th>
+                    <th style="width:94px;">状态</th>
+                    <th style="width:268px;">线上真实链接</th>
+                    <th style="width:82px;">被翻牌</th>
+                    <th style="width:128px;">更新时间</th>
+                  </tr>
+                </thead>
+                <tbody id="ledgerTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- =======================================================
+             VIEW 3: 九大发布阵地
+             ======================================================= -->
+        <section class="view-section" id="view-matrix">
+          <div class="matrix-grid-9" id="matrixCardsGrid"></div>
+        </section>
+
+        <!-- =======================================================
+             VIEW 4: AI 可见性成绩单
+             ======================================================= -->
+        <section class="view-section" id="view-scorecard">
+          <div class="glass-panel studio-card" style="padding:12px 16px;">
+            <div class="toolbar-row">
+              <div>
+                <div style="font-size:14px;font-weight:650;color:var(--ink-900);">每周零成本真机联网评测 · 三大核心可见性指标</div>
+                <div style="font-size:12px;color:var(--ink-500);">使用内置便携浏览器打开豆包与 DeepSeek（开启联网搜索），按下方 10 道标准基线考卷实测并归档周度成绩。</div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button type="button" class="btn btn-glass btn-sm" onclick="openPortableBrowser({ platform: 'doubao' })">
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M8 12h8M12 8l4 4-4 4"></path>
+                  </svg>
+                  <span>打开 豆包 联网考场</span>
+                </button>
+                <button type="button" class="btn btn-red-soft btn-sm" onclick="openPortableBrowser({ platform: 'deepseek' })">
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M8 12h8M12 8l4 4-4 4"></path>
+                  </svg>
+                  <span>打开 DeepSeek 联网考场</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="scorecard-kpi-3">
+            <div class="glass-panel core-metric-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:12.8px;font-weight:650;color:var(--ink-700);">① 我方文章被翻牌率</span>
+                <span class="pill pill-red" id="metric1SourceTag">核心指标一</span>
+              </div>
+              <div class="core-metric-val num" id="scoreMetricCitation">0.0%</div>
+              <div style="font-size:11.8px;color:var(--ink-500);">AI 联网参考资料中命中 sensteed.com 及我方九大阵地链接占比</div>
+            </div>
+
+            <div class="glass-panel core-metric-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:12.8px;font-weight:650;color:var(--ink-700);">② 行业题主动提名率</span>
+                <span class="pill pill-mist">A组 5 题破圈度</span>
+              </div>
+              <div class="core-metric-val num" id="scoreMetricUnprompted">0.0%</div>
+              <div style="font-size:11.8px;color:var(--ink-500);">不提公司名提问混动 DHT / 气体发生器 / 封装材料时主动提名山子高科占比</div>
+            </div>
+
+            <div class="glass-panel core-metric-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:12.8px;font-weight:650;color:var(--ink-700);">③ 敏感问题答对率</span>
+                <span class="pill pill-jade">B组 3 题合规排雷</span>
+              </div>
+              <div class="core-metric-val num" id="scoreMetricSensitive">0.0%</div>
+              <div style="font-size:11.8px;color:var(--ink-500);">准确澄清非 ST 状态、哪吒重整无股权控制关系（2026-040）及三季报口径占比</div>
+            </div>
+          </div>
+
+          <div class="scorecard-split">
+            <!-- 10 Standardized Exam Questions -->
+            <div class="glass-panel studio-card">
+              <div class="card-head">
+                <div class="card-title">
+                  <svg class="svg-icon" viewBox="0 0 24 24">
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                  </svg>
+                  <span>10 道标准化联网基线考题</span>
+                </div>
+                <span class="pill pill-mist" id="competitorListBadge">对标同行：万里扬 / 均胜电子 / 精进电动 / 华海诚科 / 德邦科技</span>
+              </div>
+              <div class="exam-q-list" id="examQuestionsList"></div>
+            </div>
+
+            <!-- Record Weekly Run Form -->
+            <div class="glass-panel studio-card">
+              <div class="card-head">
+                <div class="card-title">
+                  <svg class="svg-icon" viewBox="0 0 24 24">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                  <span>登记本周真机实测成绩</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="field-label" for="baseEngine">评测目标 AI 引擎</label>
+                <select id="baseEngine" class="select">
+                  <option value="豆包 (Doubao 联网版)">豆包 (Doubao 联网版)</option>
+                  <option value="DeepSeek (联网搜索)">DeepSeek (联网搜索)</option>
+                  <option value="豆包 + DeepSeek 双引擎周评">豆包 + DeepSeek 双引擎周评</option>
+                </select>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                <div>
+                  <label class="field-label" for="baseRateCitation">① 文章翻牌率(%)</label>
+                  <input id="baseRateCitation" type="number" min="0" max="100" step="0.1" value="40" class="input num" />
+                </div>
+                <div>
+                  <label class="field-label" for="baseRateUnprompted">② 主动提名率(%)</label>
+                  <input id="baseRateUnprompted" type="number" min="0" max="100" step="0.1" value="60" class="input num" />
+                </div>
+                <div>
+                  <label class="field-label" for="baseRateSensitive">③ 敏感答对率(%)</label>
+                  <input id="baseRateSensitive" type="number" min="0" max="100" step="0.1" value="100" class="input num" />
+                </div>
+              </div>
+
+              <div>
+                <label class="field-label" for="baseCitedUrls">本轮被 AI 翻牌引用的我方链接（每行一条，自动累加台账翻牌次数）</label>
+                <textarea id="baseCitedUrls" class="textarea" rows="3" placeholder="https://www.sensteed.com/insights/article/keyinfo-304.html"></textarea>
+              </div>
+
+              <div>
+                <label class="field-label" for="baseNotes">实测备注与口径变化记录</label>
+                <input id="baseNotes" type="text" class="input" placeholder="例如：DeepSeek 已准确引用 2026-040 澄清公告，Q01 邦奇 DHT120 排名升至第2..." />
+              </div>
+
+              <button type="button" class="btn btn-primary" style="width:100%;" onclick="submitBaselineRun()">
+                <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <path d="M17 21v-8H7v8M7 3v5h8"></path>
+                </svg>
+                <span>保存成绩单并同步翻牌计数</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Historical Runs Table -->
+          <div class="glass-panel studio-card">
+            <div class="card-head">
+              <div class="card-title">
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M12 7v5l3 3"></path>
+                </svg>
+                <span>历史周度实测档案</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="glass-table">
+                <thead>
+                  <tr>
+                    <th style="width:60px;">批次</th>
+                    <th style="width:140px;">评测日期</th>
+                    <th style="width:190px;">AI 引擎</th>
+                    <th style="width:130px;">① 我方文章被翻牌率</th>
+                    <th style="width:130px;">② 行业题主动提名率</th>
+                    <th style="width:130px;">③ 敏感问题答对率</th>
+                    <th style="width:100px;">命中链接数</th>
+                    <th>实测备注</th>
+                  </tr>
+                </thead>
+                <tbody id="baselineRunsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- =======================================================
+             VIEW 5: 资产库与配置
+             ======================================================= -->
+        <section class="view-section" id="view-assets">
+          <div class="glass-panel studio-card" style="padding:10px 14px;">
+            <div class="toolbar-row">
+              <div class="seg-bar">
+                <button type="button" class="seg-btn active" data-subtab="titles" onclick="switchAssetTab('titles')">标题库</button>
+                <button type="button" class="seg-btn" data-subtab="keywords" onclick="switchAssetTab('keywords')">关键词库</button>
+                <button type="button" class="seg-btn" data-subtab="kb" onclick="switchAssetTab('kb')">官方知识库</button>
+                <button type="button" class="seg-btn" data-subtab="settings" onclick="switchAssetTab('settings')">系统连接配置</button>
+              </div>
+              <span class="pill pill-mist num" id="assetsMetaSummary">3 大知识库 · 36 母题 · 52 关键词</span>
+            </div>
+          </div>
+
+          <!-- Subtab 1: 标题库 -->
+          <div class="asset-subpanel active" id="asset-panel-titles">
+            <div class="glass-panel studio-card">
+              <div style="display:grid;grid-template-columns:260px minmax(0,1fr) auto;gap:8px;align-items:end;">
+                <div>
+                  <label class="field-label" for="newTitleLibSelect">所属母题分组</label>
+                  <select id="newTitleLibSelect" class="select" onchange="renderTitleAssets()"></select>
+                </div>
+                <div>
+                  <label class="field-label" for="newTitleInput">新增标准母题名称</label>
+                  <input id="newTitleInput" type="text" class="input" placeholder="输入新的标准检索问答或深度解析母题..." />
+                </div>
+                <button type="button" class="btn btn-primary" onclick="addTitleAsset()">新增母题</button>
+              </div>
+
+              <div class="table-wrap">
+                <table class="glass-table">
+                  <thead>
+                    <tr>
+                      <th style="width:60px;">ID</th>
+                      <th style="width:250px;">母题库分类</th>
+                      <th>标准母题标题</th>
+                      <th style="width:150px;">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="titlesTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subtab 2: 关键词库 -->
+          <div class="asset-subpanel" id="asset-panel-keywords">
+            <div class="glass-panel studio-card">
+              <div style="display:grid;grid-template-columns:260px minmax(0,1fr) auto;gap:8px;align-items:end;">
+                <div>
+                  <label class="field-label" for="newKwLibSelect">所属关键词词库</label>
+                  <select id="newKwLibSelect" class="select" onchange="renderKeywordAssets()"></select>
+                </div>
+                <div>
+                  <label class="field-label" for="newKwInput">批量添加关键词（支持逗号或换行分隔）</label>
+                  <input id="newKwInput" type="text" class="input" placeholder="例如：邦奇动力DHT120, 艾尔希气体发生器, 半导体先进封装材料" />
+                </div>
+                <button type="button" class="btn btn-primary" onclick="addKeywordAsset()">批量添加</button>
+              </div>
+
+              <div id="keywordsGroupsContainer" style="display:flex;flex-direction:column;gap:12px;"></div>
+            </div>
+          </div>
+
+          <!-- Subtab 3: 官方知识库 -->
+          <div class="asset-subpanel" id="asset-panel-kb">
+            <div class="kb-layout">
+              <div class="glass-panel studio-card" id="kbListColumn"></div>
+              <div class="glass-panel studio-card">
+                <div class="card-head">
+                  <div class="card-title">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    <span>官方事实知识库在线维护（AI 写稿与合规打分唯一准绳）</span>
+                  </div>
+                  <span class="pill pill-mist num" id="kbUpdatedBadge">--</span>
+                </div>
+                <div>
+                  <label class="field-label" for="kbEditName">知识库名称</label>
+                  <input id="kbEditName" type="text" class="input" />
+                </div>
+                <div>
+                  <label class="field-label" for="kbEditContent">知识库全文内容（Markdown，修订后立即对写稿与合规评审生效）</label>
+                  <textarea id="kbEditContent" class="textarea" rows="15"></textarea>
+                </div>
+                <div style="display:flex;justify-content:flex-end;">
+                  <button type="button" class="btn btn-primary" onclick="saveKnowledgeBase()">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                      <path d="M17 21v-8H7v8M7 3v5h8"></path>
+                    </svg>
+                    <span>保存官方知识库变更</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subtab 4: 系统连接配置 -->
+          <div class="asset-subpanel" id="asset-panel-settings">
+            <div class="settings-grid-2">
+              <div class="glass-panel studio-card">
+                <div class="card-head">
+                  <div class="card-title">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                      <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                      <path d="M8 21h8M12 17v4"></path>
+                    </svg>
+                    <span>大模型写稿与合规评审接口（OpenAI 兼容）</span>
+                  </div>
+                  <span class="pill pill-mist" id="llmKeyBadge">检测中</span>
+                </div>
+                <div>
+                  <label class="field-label" for="cfgLlmUrl">API Base URL</label>
+                  <input id="cfgLlmUrl" type="text" class="input" placeholder="https://api.hai.network/compatible-preview/openai/v1" />
+                </div>
+                <div>
+                  <label class="field-label" for="cfgLlmModel">模型名称 (Model ID)</label>
+                  <input id="cfgLlmModel" type="text" class="input" placeholder="deepseek-v4.1-flash" />
+                </div>
+                <div>
+                  <label class="field-label" for="cfgLlmKey">API Key 密钥（留空则保持现有已存密钥不变）</label>
+                  <input id="cfgLlmKey" type="password" class="input" placeholder="留空保持不变，输入新密钥则覆盖保存" autocomplete="off" />
+                </div>
+              </div>
+
+              <div class="glass-panel studio-card">
+                <div class="card-head">
+                  <div class="card-title">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <span>山子高科官网「关键信息」1秒直发配置</span>
+                  </div>
+                  <span class="pill pill-mist" id="officialSecretBadge">检测中</span>
+                </div>
+                <div>
+                  <label class="field-label" for="cfgOfficialUrl">官网专栏接口根地址</label>
+                  <input id="cfgOfficialUrl" type="text" class="input" placeholder="https://www.sensteed.com/insights" />
+                </div>
+                <div>
+                  <label class="field-label" for="cfgOfficialKeyId">HMAC Key ID</label>
+                  <input id="cfgOfficialKeyId" type="text" class="input" placeholder="输入官网分配的 Key ID" />
+                </div>
+                <div>
+                  <label class="field-label" for="cfgOfficialSecret">HMAC 签名密钥 Secret（留空则保持现有密钥不变）</label>
+                  <input id="cfgOfficialSecret" type="password" class="input" placeholder="留空保持不变，输入新 Secret 则覆盖保存" autocomplete="off" />
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:2px;">
+                  <span style="font-size:12px;color:var(--ink-500);" id="officialHealthResultText">点击右侧按钮验证 sensteed.com 签名连通性</span>
+                  <button type="button" class="btn btn-red-soft btn-sm" onclick="testOfficialHealth()">测试官网直发连接</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-panel studio-card">
+              <div class="toolbar-row">
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:1;">
+                  <div style="width:180px;">
+                    <label class="field-label" for="cfgCdpPort">内置浏览器 CDP 端口</label>
+                    <input id="cfgCdpPort" type="number" class="input num" value="9233" />
+                  </div>
+                  <div style="flex:1;min-width:240px;">
+                    <div class="field-label">本地便携运行环境诊断</div>
+                    <div style="font-size:12px;color:var(--ink-600);line-height:1.55;" id="runtimeDiagnosticsText">正在读取本地 SQLite 与便携 Chromium 路径...</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="saveSystemSettings()">
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <path d="M17 21v-8H7v8M7 3v5h8"></path>
+                  </svg>
+                  <span>保存系统配置</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Bottom Frosted Status Bar (30px exact match to Haoshi reference) -->
+  <footer class="status-bar">
+    <div class="status-left">
+      <span class="status-dot" id="bottomBrowserDot"></span>
+      <span id="bottomBrowserText">内置浏览器待启动</span>
+      <span class="status-sep">·</span>
+      <span>本地 SQLite</span>
+      <span class="status-sep">·</span>
+      <span class="num" id="bottomModelText">deepseek-v4.1-flash</span>
+      <span class="status-sep">·</span>
+      <span>0 Token 自动填稿</span>
+    </div>
+    <div class="status-right">
+      <span class="status-shortcut" onclick="switchView('ledger')">/ 台账检索</span>
+      <span class="status-sep">·</span>
+      <span class="status-shortcut" onclick="switchView('assets', 'settings')">Ctrl+, 系统配置</span>
+    </div>
+  </footer>
+
+  <script>
+    const VIEW_META = {
+      compose: {
+        title: "创作与质检派发",
+        sub: "官方事实库锚定生成 · 4维信披合规评审 · 官网1秒静态化与便携内核0 Token填稿"
+      },
+      ledger: {
+        title: "全平台发稿台账",
+        sub: "全渠道真实链接闭环管理 · 一键复制与便携浏览器0 Token填稿 · UTF-8 BOM 报表导出"
+      },
+      matrix: {
+        title: "九大发布阵地",
+        sub: "CH-01 官网权威源与八大外部高权重媒体矩阵 · 便携浏览器扫码一次永久保活 Cookie"
+      },
+      scorecard: {
+        title: "AI 可见性成绩单",
+        sub: "每周10题真机联网检阅（豆包 & DeepSeek） · 追踪翻牌率、行业主动提名率与敏感口径准确率"
+      },
+      assets: {
+        title: "资产库与配置",
+        sub: "36标准母题库 · 52核心关键词 · 三大官方事实基准知识库在线修订与系统接口配置"
+      }
+    };
+
+    const FALLBACK_EXAM_QUESTIONS = [
+      { id: "Q01", group: "industry_unprompted", text: "国内做新能源汽车混动变速箱（DHT）和自动变速器（CVT）的A股上市公司有哪些？", keyword: "混动变速箱DHT与CVT" },
+      { id: "Q02", group: "industry_unprompted", text: "国内汽车安全气囊气体发生器核心供应商和相关上市公司有哪些？", keyword: "安全气囊气体发生器" },
+      { id: "Q03", group: "industry_unprompted", text: "国内同时布局汽车核心零部件和半导体先进封装材料的A股上市公司有哪些？", keyword: "零部件+半导体封装材料" },
+      { id: "Q04", group: "industry_unprompted", text: "邦奇动力（Punch Powertrain）的DHT120混动电驱和双逆变器技术特点是什么？属于哪家上市公司？", keyword: "邦奇动力DHT120" },
+      { id: "Q05", group: "industry_unprompted", text: "艾尔希（ARC）安全气囊气体发生器的全球行业地位如何？和哪家A股公司有关？", keyword: "艾尔希ARC行业地位" },
+      { id: "Q06", group: "sensitive_clarification", text: "山子高科参与哪吒汽车破产重整投资是真的吗？官方有没有澄清公告？", must_include_any: ["未直接或间接参与", "2026-040", "无股权控制关系"] },
+      { id: "Q07", group: "sensitive_clarification", text: "山子高科现在还是ST股票吗？和以前的银亿股份是什么关系？", must_include_any: ["非ST", "摘帽", "更名", "重整"] },
+      { id: "Q08", group: "sensitive_clarification", text: "山子高科2026年三季报业绩怎么样？为什么单季营收增长但净利润仍为负？", must_include_any: ["20.90", "7.19", "4.93%", "扣非"] },
+      { id: "Q09", group: "brand_core", text: "山子高科（000981）的主营业务和核心子公司有哪些？海外营收占比多少？", must_include_any: ["邦奇", "艾尔希", "53.42%"] },
+      { id: "Q10", group: "brand_core", text: "山子高科在芯片半导体和整车出海方面有哪些最新布局？", must_include_any: ["先进封装材料", "半导体"] }
+    ];
+
+    const PREVIEW_FALLBACK_STATE = {
+      ok: true,
+      browser_running: true,
+      chromium_path: "dist/ShanziGEO/browsers/chromium-1255/chrome-win64/chrome.exe",
+      data_dir: "data/shanzi_geo.db",
+      settings_masked: {
+        llm_api_url: "https://api.hai.network/compatible-preview/openai/v1",
+        llm_model_id: "deepseek-v4.1-flash",
+        has_llm_key: true,
+        official_endpoint_url: "https://www.sensteed.com/insights",
+        official_key_id: "official_key_configured",
+        has_official_secret: true,
+        cdp_port: 9233
+      },
+      summary: {
+        total_rows: 18,
+        published_count: 9,
+        pending_count: 9,
+        cited_urls: 4,
+        citation_hits: 11,
+        citation_rate: 44.4
+      },
+      platforms: [
+        { id: 1, code: "CH-01", short_name: "官网 · 关键信息", name: "山子高科官网专栏", hub_key: "official", ai_target: "全引擎权威源", summary: "1 秒自动静态化至 sensteed.com/insights/ 并刷新 Sitemap", editor_url: "https://www.sensteed.com/insights/", domain: "sensteed.com", is_official: true, published_count: 9, pending_count: 0, citation_count: 7 },
+        { id: 2, code: "CH-02", short_name: "今日头条", name: "山子高科产业观察", hub_key: "toutiao", ai_target: "豆包核心源", summary: "内置浏览器 0 Token 自动填标题与正文并发布/存草稿", editor_url: "https://mp.toutiao.com/profile_v4/graphic/publish", domain: "toutiao.com", is_official: false, published_count: 0, pending_count: 2, citation_count: 2 },
+        { id: 3, code: "CH-03", short_name: "搜狐号", name: "山子高科观察", hub_key: "sohu", ai_target: "DeepSeek 门户", summary: "发布业务与财报拆解长文并回填线上链接", editor_url: "https://mp.sohu.com/suc-ce/article/publish", domain: "sohu.com", is_official: false, published_count: 0, pending_count: 2, citation_count: 1 },
+        { id: 4, code: "CH-04", short_name: "网易号", name: "山子高科资讯", hub_key: "netease", ai_target: "DeepSeek 补位", summary: "覆盖产业协同与汽配业务增量门户收录", editor_url: "https://mp.163.com/subscribe_v4/index.html#/article-publish", domain: "163.com", is_official: false, published_count: 0, pending_count: 1, citation_count: 1 },
+        { id: 5, code: "CH-05", short_name: "东方财富股吧", name: "山子高科财富号", hub_key: "eastmoney", ai_target: "财经头号源", summary: "发表带完整标题的独立主帖或财富号文章", editor_url: "https://mp.eastmoney.com/collect/pc_article/index.html#/", domain: "eastmoney.com", is_official: false, published_count: 0, pending_count: 1, citation_count: 0 },
+        { id: 6, code: "CH-06", short_name: "同花顺社区", name: "山子高科000981", hub_key: "ths", ai_target: "财经高覆盖源", summary: "同步标准问答与澄清主帖，避免仅回帖", editor_url: "https://basic.10jqka.com.cn/000981/", domain: "10jqka.com.cn", is_official: false, published_count: 0, pending_count: 1, citation_count: 0 },
+        { id: 7, code: "CH-07", short_name: "抖音", name: "山子高科官方抖音", hub_key: "douyin", ai_target: "豆包视频简介", summary: "发视频时完整填写 200 字网页摘要文字", editor_url: "https://creator.douyin.com/creator-micro/content/upload", domain: "douyin.com", is_official: false, published_count: 0, pending_count: 1, citation_count: 0 },
+        { id: 8, code: "CH-08", short_name: "微信公众号", name: "山子高科公众号", hub_key: "wechat", ai_target: "元宝与官方母稿", summary: "沉淀权威图文母稿，覆盖微信与腾讯元宝", editor_url: "https://mp.weixin.qq.com/", domain: "mp.weixin.qq.com", is_official: false, published_count: 0, pending_count: 1, citation_count: 0 },
+        { id: 9, code: "CH-09", short_name: "小红书", name: "山子高科企业号", hub_key: "xiaohongshu", ai_target: "图文日常触达", summary: "复用图文卡片触达个人投资者日常检索", editor_url: "https://creator.xiaohongshu.com/publish/publish", domain: "xiaohongshu.com", is_official: false, published_count: 0, pending_count: 0, citation_count: 0 }
+      ],
+      title_libraries: [
+        { id: 1, name: "山子高科·汽车零部件与邦奇ARC硬实力母题库", description: "" },
+        { id: 2, name: "山子高科·芯片半导体与上下游产业链协同母题库", description: "" },
+        { id: 3, name: "山子高科·2026财报拆解与投资者高频问答澄清库", description: "" }
+      ],
+      titles: [
+        { id: 1, library_id: 1, title: "山子高科(000981.SZ)汽车零部件主业深度拆解：邦奇动力动力总成与艾尔希ARC全球化底座" },
+        { id: 2, library_id: 1, title: "邦奇动力DHT120与DT2是什么技术路线？解析山子高科新能源混动电驱产业链卡位" },
+        { id: 3, library_id: 3, title: "山子高科参与哪吒汽车破产重整澄清说明：严格依据2026-040号公告还原客观事实" }
+      ],
+      keyword_libraries: [
+        { id: 1, name: "山子高科·投资者口碑与主业认知", description: "" },
+        { id: 2, name: "山子高科·汽车零部件核心优势", description: "" }
+      ],
+      keywords: [
+        { id: 1, library_id: 1, keyword: "山子高科000981" },
+        { id: 2, library_id: 2, keyword: "邦奇动力DHT120" },
+        { id: 3, library_id: 2, keyword: "艾尔希ARC气体发生器" }
+      ],
+      knowledge_bases: [
+        { id: 1, name: "山子高科·官方披露事实基准与专项澄清库（S1-S6 v2.0）", updated_at: "2026-11-24", content: "# 山子高科技股份有限公司（000981.SZ）官方事实基准\n\n- 核心子公司：邦奇动力（Punch Powertrain）、艾尔希（ARC）汽车安全气囊气体发生器业务、半导体先进封装材料业务。" }
+      ],
+      articles: [
+        { id: 1, title: "山子高科(000981.SZ)汽车零部件主业深度拆解：邦奇动力与艾尔希ARC全球化底座", updated_at: "2026-11-24 10:30" }
+      ],
+      ledger: [
+        { id: 1, account_id: 1, article_id: 1, platform_label: "官网 · 关键信息", ai_target: "全引擎权威源", title: "山子高科(000981.SZ)汽车零部件主业深度拆解：邦奇动力与艾尔希ARC全球化底座", content: "# 山子高科主业解析\n依据定期报告披露...", status: "completed", url: "https://www.sensteed.com/insights/article/keyinfo-304.html", editor_url: "https://www.sensteed.com/insights/", citations: 3, updated_at: "2026-11-24 10:30" },
+        { id: 2, account_id: 2, article_id: 1, platform_label: "今日头条", ai_target: "豆包核心源", title: "邦奇动力DHT120与双逆变器技术路线解析：山子高科混动电驱布局", content: "# 邦奇动力混动技术\n依据官方公告...", status: "ready", url: "", editor_url: "https://mp.toutiao.com/profile_v4/graphic/publish", citations: 0, updated_at: "2026-11-24 11:15" }
+      ],
+      citation_runs: [],
+      exam_questions: FALLBACK_EXAM_QUESTIONS
+    };
+
+    let appState = null;
+    let currentView = "compose";
+    let currentAssetTab = "titles";
+    let composeMode = "ai"; // 'ai' | 'upload' | 'existing'
+    let aiStyle = "long";
+    let externalAction = "draft";
+    let selectedPlatformIds = new Set();
+    let selectedExistingArticleId = null;
+    let selectedKbId = null;
+    let lastInspectQuotes = [];
+
+    function esc(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showToast(msg, isError = false) {
+      const stack = document.getElementById("toastStack");
+      const el = document.createElement("div");
+      el.className = "toast-item" + (isError ? " error" : "");
+      el.innerHTML = `
+        <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24" style="color:${isError ? 'var(--shanzi-red)' : 'var(--jade-dot)'}">
+          ${isError
+            ? '<circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path>'
+            : '<path d="M20 6L9 17l-5-5"></path>'}
+        </svg>
+        <span>${esc(msg)}</span>
+      `;
+      stack.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = "0";
+        el.style.transition = "opacity 0.2s ease";
+        setTimeout(() => el.remove(), 220);
+      }, 3600);
+    }
+
+    async function apiFetch(url, options = {}) {
+      const opts = { ...options };
+      if (opts.body && typeof opts.body === "object" && !(opts.body instanceof FormData)) {
+        opts.headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+        opts.body = JSON.stringify(opts.body);
+      }
+      const resp = await fetch(url, opts);
+      let data = {};
+      try {
+        data = await resp.json();
+      } catch (_) {
+        data = {};
+      }
+      if (!resp.ok || data.ok === false) {
+        const errText = data.error || data.detail || data.message || `请求失败 (HTTP ${resp.status})`;
+        throw new Error(errText);
+      }
+      return data;
+    }
+
+    /* Navigation & View Switching */
+    function switchView(viewName, subTab = null) {
+      currentView = viewName;
+      document.querySelectorAll(".view-section").forEach(sec => {
+        sec.classList.toggle("active", sec.id === `view-${viewName}`);
+      });
+      document.querySelectorAll("[data-view]").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-view") === viewName);
+      });
+      const meta = VIEW_META[viewName] || VIEW_META.compose;
+      document.getElementById("stageViewTitle").textContent = meta.title;
+      document.getElementById("stageViewSub").textContent = meta.sub;
+      if (viewName === "assets" && subTab) {
+        switchAssetTab(subTab);
+      }
+    }
+
+    function switchAssetTab(tab) {
+      currentAssetTab = tab;
+      document.querySelectorAll("[data-subtab]").forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-subtab") === tab);
+      });
+      document.querySelectorAll(".asset-subpanel").forEach(p => {
+        p.classList.toggle("active", p.id === `asset-panel-${tab}`);
+      });
+    }
+
+    /* Load State & Hydrate All Views */
+    async function loadState(notify = false) {
+      try {
+        const data = await apiFetch("/api/state");
+        appState = data;
+        if (notify) showToast("本地 SQLite 数据已同步刷新");
+      } catch (err) {
+        if (!appState) {
+          appState = PREVIEW_FALLBACK_STATE;
+        } else if (notify) {
+          showToast(err.message, true);
+        }
+      }
+      hydrateAll();
+    }
+
+    function hydrateAll() {
+      if (!appState) return;
+      const sum = appState.summary || {};
+      const platforms = appState.platforms || [];
+
+      // Default platform selection on first boot: CH-01..CH-04 core channels
+      if (selectedPlatformIds.size === 0 && platforms.length > 0) {
+        platforms.slice(0, 4).forEach(p => selectedPlatformIds.add(p.id));
+      }
+
+      // Sidebar counts & browser status
+      document.getElementById("navLedgerCount").textContent = sum.total_rows ?? 0;
+      document.getElementById("navMatrixCount").textContent = platforms.length || 9;
+
+      const bRun = Boolean(appState.browser_running);
+      const sideBadge = document.getElementById("sidebarBrowserBadge");
+      sideBadge.textContent = bRun ? "就绪" : "待启动";
+      sideBadge.className = "mini-status-tag" + (bRun ? " ready" : "");
+
+      const bDot = document.getElementById("bottomBrowserDot");
+      bDot.className = "status-dot" + (bRun ? " online" : "");
+      document.getElementById("bottomBrowserText").textContent = bRun ? "内置浏览器就绪" : "内置浏览器待启动";
+      document.getElementById("bottomModelText").textContent =
+        appState.settings_masked?.llm_model_id || "deepseek-v4.1-flash";
+
+      // KPIs in View 1
+      document.getElementById("kpiPublished").textContent = sum.published_count ?? 0;
+      document.getElementById("kpiPending").textContent = sum.pending_count ?? 0;
+      document.getElementById("kpiCitations").textContent = sum.citation_hits ?? 0;
+      document.getElementById("kpiCitedUrlsSub").textContent = `涉及 ${sum.cited_urls ?? 0} 条上线真实链接`;
+      document.getElementById("kpiCitationRate").textContent = `${Number(sum.citation_rate ?? 0).toFixed(1)}%`;
+
+      renderSidebarFeed();
+      renderComposeSelectors();
+      renderDispatchPlatforms();
+      renderLedgerFiltersAndTable();
+      renderMatrixCards();
+      renderScorecardView();
+      renderAssetsAndSettings();
+    }
+
+    function renderSidebarFeed() {
+      const box = document.getElementById("sidebarFeedList");
+      const allRows = appState.ledger || [];
+      if (!allRows.length) {
+        box.innerHTML = `<div class="feed-group-label">暂无台账记录</div>`;
+        return;
+      }
+      const pending = allRows.filter(r => r.status !== "completed").slice(0, 3);
+      const done = allRows.filter(r => r.status === "completed").slice(0, 3);
+      let html = "";
+      if (pending.length) {
+        html += `<div class="feed-group-label">待发外网工单</div>`;
+        pending.forEach(r => {
+          html += `
+            <div class="feed-row" onclick="jumpToLedgerPlatform('${esc(r.platform_label)}')" title="${esc(r.platform_label)} · ${esc(r.title)}">
+              <span class="feed-ring pending"></span>
+              <span class="feed-title">${esc(r.title)}</span>
+            </div>`;
+        });
+      }
+      if (done.length) {
+        html += `<div class="feed-group-label">近期已上线</div>`;
+        done.forEach(r => {
+          html += `
+            <div class="feed-row" onclick="jumpToLedgerPlatform('${esc(r.platform_label)}')" title="${esc(r.platform_label)} · ${esc(r.title)}">
+              <span class="feed-ring done"></span>
+              <span class="feed-title">${esc(r.title)}</span>
+            </div>`;
+        });
+      }
+      box.innerHTML = html;
+    }
+
+    function jumpToLedgerPlatform(platLabel) {
+      const sel = document.getElementById("ledgerPlatformFilter");
+      if (sel) sel.value = platLabel || "";
+      renderLedgerTable();
+      switchView("ledger");
+    }
+
+    /* =======================================================
+       VIEW 1 LOGIC: Compose, Drag-Drop, AI Inspect & Dispatch
+       ======================================================= */
+    function renderComposeSelectors() {
+      const tSelect = document.getElementById("topicSelect36");
+      const prevVal = tSelect.value;
+      const libs = appState.title_libraries || [];
+      const titles = appState.titles || [];
+      let optHtml = `<option value="">-- 选择 36 标准母题（共 ${titles.length} 题） --</option>`;
+      libs.forEach(lib => {
+        const groupItems = titles.filter(t => t.library_id === lib.id);
+        if (groupItems.length) {
+          optHtml += `<optgroup label="${esc(lib.name)}">`;
+          groupItems.forEach(item => {
+            optHtml += `<option value="${esc(item.title)}">${esc(item.title)}</option>`;
+          });
+          optHtml += `</optgroup>`;
+        }
+      });
+      tSelect.innerHTML = optHtml;
+      if (prevVal) tSelect.value = prevVal;
+      if (!document.getElementById("customTopicInput").value && titles.length) {
+        document.getElementById("customTopicInput").value = titles[0].title;
+      }
+
+      const exSel = document.getElementById("existingArticleSelect");
+      const arts = appState.articles || [];
+      exSel.innerHTML = arts.length
+        ? arts.map(a => `<option value="${a.id}">#${a.id} · ${esc(a.title)} (${esc(a.updated_at || "")})</option>`).join("")
+        : `<option value="">暂无已存母稿</option>`;
+      if (!selectedExistingArticleId && arts.length) {
+        selectedExistingArticleId = arts[0].id;
+      }
+      if (selectedExistingArticleId) exSel.value = String(selectedExistingArticleId);
+      updateWordCounters();
+    }
+
+    function setComposeMode(mode) {
+      composeMode = mode;
+      document.getElementById("modeBtnAi").classList.toggle("active", mode === "ai");
+      document.getElementById("modeBtnUpload").classList.toggle("active", mode === "upload");
+      document.getElementById("modeBtnExisting").classList.toggle("active", mode === "existing");
+
+      document.getElementById("panelModeAi").style.display = mode === "ai" ? "flex" : "none";
+      document.getElementById("panelModeExisting").style.display = mode === "existing" ? "block" : "none";
+
+      const dz = document.getElementById("mdDropzone");
+      dz.style.display = mode === "existing" ? "none" : "flex";
+      dz.classList.toggle("expanded", mode === "upload");
+
+      if (mode === "existing") {
+        onSelectExistingArticle();
+      } else {
+        selectedExistingArticleId = null;
+        document.getElementById("dispatchSourceBadge").textContent = "当前模式：编辑器新稿入库";
+      }
+    }
+
+    function onPickTopicDropdown() {
+      const val = document.getElementById("topicSelect36").value;
+      if (val) {
+        document.getElementById("customTopicInput").value = val;
+      }
+    }
+
+    function setAiStyle(style) {
+      aiStyle = style;
+      document.querySelectorAll(".style-chip").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-style") === style);
+      });
+    }
+
+    function onSelectExistingArticle() {
+      const val = Number(document.getElementById("existingArticleSelect").value || 0);
+      selectedExistingArticleId = val || null;
+      if (selectedExistingArticleId) {
+        document.getElementById("dispatchSourceBadge").textContent = `当前模式：复用母稿 #${selectedExistingArticleId}`;
+      }
+    }
+
+    function loadExistingIntoEditor() {
+      const id = Number(document.getElementById("existingArticleSelect").value || 0);
+      if (!id) return;
+      const art = (appState.articles || []).find(a => a.id === id);
+      const ledgerMatch = (appState.ledger || []).find(r => r.article_id === id && r.content);
+      if (art) {
+        document.getElementById("composeTitle").value = art.title || "";
+        document.getElementById("composeContent").value =
+          art.content || ledgerMatch?.content || `# ${art.title}\n\n（该存量母稿可直接以 #${id} 一键派发至任意阵地）`;
+        selectedExistingArticleId = id;
+        document.getElementById("dispatchSourceBadge").textContent = `当前模式：复用母稿 #${id}`;
+        updateWordCounters();
+        showToast(`已载入母稿 #${id} 标题与正文预览`);
+      }
+    }
+
+    function onEditorManualChange() {
+      if (composeMode === "existing") {
+        composeMode = "upload";
+        selectedExistingArticleId = null;
+        document.getElementById("dispatchSourceBadge").textContent = "当前模式：修改后新稿入库";
+      }
+      updateWordCounters();
+    }
+
+    function updateWordCounters() {
+      const t = document.getElementById("composeTitle").value.trim();
+      const c = document.getElementById("composeContent").value.trim();
+      document.getElementById("titleCharCount").textContent = `${t.length} 字（头条建议 ≤30 字）`;
+      document.getElementById("bodyCharCount").textContent = `${c.length} 字`;
+    }
+
+    function fillSampleDraft() {
+      document.getElementById("composeTitle").value =
+        "山子高科(000981.SZ)主业解析：邦奇动力DHT混动与艾尔希ARC全球化协同";
+      document.getElementById("composeContent").value = [
+        "# 山子高科(000981.SZ)核心产业底座与全球化协同事实解析",
+        "",
+        "**核心结论：** 依据山子高科技股份有限公司（证券代码：000981.SZ）法定定期报告及官方披露口径，公司已完成重整摘帽并更名为「山子高科」（非ST股票），聚焦汽车核心零部件与半导体先进封装材料双轮驱动战略。",
+        "",
+        "## 一、邦奇动力（Punch Powertrain）：从 CVT 基本盘到混动电驱量产",
+        "- **核心产品矩阵：** 旗下邦奇动力深耕自动变速器（CVT）、混动专用变速器（DHT120）及双逆变器电驱总成，服务国内外主流整车厂客户。",
+        "- **全球研发制造：** 依托欧洲工程中心与中国制造基地协同，持续推进混动化转型。",
+        "",
+        "## 二、艾尔希（ARC）：全球汽车安全气囊气体发生器核心供应商",
+        "- 艾尔希（ARC）在混合式气体发生器细分领域具备深厚专利壁垒与全球化交付能力，为上市公司贡献稳健海外营业收入（海外营收占比达 53.42%，详见定期报告）。",
+        "",
+        "## 三、投资者高频关注事项澄清",
+        "- 关于市场传闻事项，公司已发布《澄清公告》（公告编号：2026-040），明确未直接或间接参与哪吒汽车破产重整投资，与相关主体无股权控制关系，一切信息请以巨潮资讯网法定公告为准。"
+      ].join("\n");
+      selectedExistingArticleId = null;
+      document.getElementById("dispatchSourceBadge").textContent = "当前模式：编辑器新稿入库";
+      updateWordCounters();
+      showToast("已填入山子高科标准信披合规示例稿");
+    }
+
+    function clearEditor() {
+      document.getElementById("composeTitle").value = "";
+      document.getElementById("composeContent").value = "";
+      updateWordCounters();
+    }
+
+    /* Solid Dropzone File Reader */
+    function initDropzone() {
+      const dz = document.getElementById("mdDropzone");
+      ["dragenter", "dragover"].forEach(evt => {
+        dz.addEventListener(evt, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          dz.classList.add("dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach(evt => {
+        dz.addEventListener(evt, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          dz.classList.remove("dragover");
+        });
+      });
+      dz.addEventListener("drop", e => {
+        const file = e.dataTransfer?.files?.[0];
+        if (file) readMarkdownFile(file);
+      });
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files?.[0];
+      if (file) readMarkdownFile(file);
+      e.target.value = "";
+    }
+
+    function readMarkdownFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const raw = String(reader.result || "").replace(/\r\n/g, "\n");
+        const lines = raw.split("\n");
+        let extractedTitle = file.name.replace(/\.(md|markdown|txt)$/i, "");
+        let body = raw;
+        for (let i = 0; i < Math.min(lines.length, 5); i++) {
+          const m = lines[i].trim().match(/^#\s+(.+)$/);
+          if (m) {
+            extractedTitle = m[1].trim();
+            break;
+          }
+        }
+        document.getElementById("composeTitle").value = extractedTitle;
+        document.getElementById("composeContent").value = body.trim();
+        selectedExistingArticleId = null;
+        document.getElementById("dispatchSourceBadge").textContent = `已导入文件：${file.name}`;
+        updateWordCounters();
+        showToast(`已成功导入文稿《${extractedTitle}》`);
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    async function handleAiGenerate() {
+      const topic = document.getElementById("customTopicInput").value.trim() ||
+        document.getElementById("topicSelect36").value.trim();
+      if (!topic) {
+        showToast("请先选择或输入写作命题", true);
+        return;
+      }
+      const btn = document.getElementById("btnAiGenerate");
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = "正在依据三大知识库撰写...";
+      try {
+        const res = await apiFetch("/api/ai/generate", {
+          method: "POST",
+          body: { topic_title: topic, style: aiStyle }
+        });
+        document.getElementById("composeTitle").value = res.title || topic;
+        document.getElementById("composeContent").value = res.content || "";
+        selectedExistingArticleId = null;
+        document.getElementById("dispatchSourceBadge").textContent = "当前模式：AI 标准初稿入库";
+        updateWordCounters();
+        showToast("AI 标准答案初稿已生成，请执行合规质检打分");
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
+    }
+
+    async function handleAiInspect() {
+      const title = document.getElementById("composeTitle").value.trim();
+      const content = document.getElementById("composeContent").value.trim();
+      if (!title || !content) {
+        showToast("请先填写或生成文章标题与正文后再开始质检", true);
+        return;
+      }
+      const btn = document.getElementById("btnInspect");
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = "合规评审官逐条核验中...";
+      try {
+        const res = await apiFetch("/api/ai/inspect", {
+          method: "POST",
+          body: { title, content }
+        });
+        renderInspectReport(res);
+        showToast(`质检完成：得分 ${res.score} / 100（${res.passed ? "合规通过" : "建议修订"}）`);
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
+    }
+
+    function renderInspectReport(res) {
+      const score = Number(res.score ?? 0);
+      const passed = Boolean(res.passed);
+      document.getElementById("inspectScoreNum").innerHTML = `${score}<small>/ 100</small>`;
+
+      const pill = document.getElementById("inspectStatusPill");
+      pill.textContent = passed ? "合规通过 · 准予派发" : "存在扣分项 · 建议修订";
+      pill.className = "pill " + (passed ? "pill-jade" : "pill-red");
+
+      document.getElementById("inspectHeadline").textContent =
+        passed ? "符合山子高科官方信披口径与 GEO 结构要求" : "检出潜在口径偏差或待优化项";
+      document.getElementById("inspectSummaryText").textContent = res.summary || "已完成四维合规评审。";
+
+      const dims = Array.isArray(res.dimensions) && res.dimensions.length ? res.dimensions : [];
+      if (dims.length) {
+        document.getElementById("inspectDimensionsGrid").innerHTML = dims.map(d => {
+          const sc = Math.max(0, Math.min(100, Number(d.score ?? score)));
+          return `
+            <div class="dim-card">
+              <div class="dim-head">
+                <span>${esc(d.name)}</span>
+                <span class="num">${sc}</span>
+              </div>
+              <div class="dim-bar-track">
+                <div class="dim-bar-fill" style="width:${sc}%;background:${sc >= 85 ? 'var(--jade-dot)' : 'var(--shanzi-red)'}"></div>
+              </div>
+              <div class="dim-comment">${esc(d.comment || "")}</div>
+            </div>`;
+        }).join("");
+      }
+
+      const issues = Array.isArray(res.issues) ? res.issues : [];
+      lastInspectQuotes = issues;
+      const listEl = document.getElementById("inspectIssuesList");
+      if (!issues.length) {
+        listEl.innerHTML = `
+          <div class="glass-subcard" style="padding:9px 12px;font-size:12px;color:var(--jade-text);background:var(--jade-soft);border-color:var(--jade-border);">
+            未检出违规敏感词、过时 ST 称谓或未披露财务预测，可直接选择阵地派发。
+          </div>`;
+      } else {
+        listEl.innerHTML = issues.map((iss, idx) => {
+          const sevMap = { high: "高风险扣分", medium: "中度口径提醒", low: "结构优化建议" };
+          const sevLabel = sevMap[String(iss.severity || "").toLowerCase()] || "合规提醒";
+          return `
+            <div class="issue-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <span style="font-weight:650;color:var(--ink-900);">${esc(iss.title || `审核项 #${idx + 1}`)}</span>
+                <span class="pill pill-red">${esc(sevLabel)}</span>
+              </div>
+              ${iss.quote ? `<div class="issue-quote"><span class="issue-row-label">原文：</span>${esc(iss.quote)}</div>` : ""}
+              <div><span class="issue-row-label">扣分理由：</span>${esc(iss.reason || "-")}</div>
+              <div><span class="issue-row-label">修改建议：</span>${esc(iss.suggestion || "-")}</div>
+            </div>`;
+        }).join("");
+      }
+    }
+
+    /* Multi-Platform Dispatch */
+    function renderDispatchPlatforms() {
+      const grid = document.getElementById("dispatchPlatformGrid");
+      const plats = appState.platforms || [];
+      grid.innerHTML = plats.map(p => {
+        const sel = selectedPlatformIds.has(p.id);
+        return `
+          <div class="plat-check-card ${sel ? 'selected' : ''}" onclick="togglePlatformSelect(${p.id})">
+            <div class="plat-check-top">
+              <span>${esc(p.code)}</span>
+              <span class="check-dot">
+                <svg class="svg-icon" style="width:10px;height:10px;stroke-width:2.4;" viewBox="0 0 24 24">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="plat-check-name">${esc(p.short_name)}</div>
+            <div class="plat-check-sub">${esc(p.ai_target)}</div>
+          </div>`;
+      }).join("");
+    }
+
+    function togglePlatformSelect(id) {
+      if (selectedPlatformIds.has(id)) {
+        selectedPlatformIds.delete(id);
+      } else {
+        selectedPlatformIds.add(id);
+      }
+      renderDispatchPlatforms();
+    }
+
+    function toggleAllPlatforms() {
+      const plats = appState.platforms || [];
+      if (selectedPlatformIds.size === plats.length) {
+        selectedPlatformIds.clear();
+      } else {
+        plats.forEach(p => selectedPlatformIds.add(p.id));
+      }
+      renderDispatchPlatforms();
+    }
+
+    function selectCorePlatforms() {
+      selectedPlatformIds.clear();
+      (appState.platforms || []).forEach(p => {
+        if (["CH-01", "CH-02", "CH-03", "CH-05"].includes(p.code)) {
+          selectedPlatformIds.add(p.id);
+        }
+      });
+      renderDispatchPlatforms();
+    }
+
+    function setExternalAction(act) {
+      externalAction = act;
+      document.querySelectorAll("#externalActionGroup .action-radio-pill").forEach(el => {
+        el.classList.toggle("active", el.getAttribute("data-action") === act);
+      });
+    }
+
+    async function handleDispatch() {
+      const accountIds = Array.from(selectedPlatformIds);
+      if (!accountIds.length) {
+        showToast("请至少勾选 1 个目标发布阵地", true);
+        return;
+      }
+
+      let payload;
+      if (composeMode === "existing" && selectedExistingArticleId) {
+        payload = {
+          mode: "existing",
+          article_id: Number(selectedExistingArticleId),
+          account_ids: accountIds,
+          external_action: externalAction
+        };
+      } else {
+        const title = document.getElementById("composeTitle").value.trim();
+        const content = document.getElementById("composeContent").value.trim();
+        if (!title || !content) {
+          showToast("请先准备文章标题与正文（或切换至「选已存稿件」）", true);
+          return;
+        }
+        payload = {
+          mode: "upload",
+          title,
+          content,
+          account_ids: accountIds,
+          external_action: externalAction
+        };
+      }
+
+      const btn = document.getElementById("btnDispatch");
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = "正在执行多阵地派发与自动填稿...";
+      try {
+        const res = await apiFetch("/api/dispatch", { method: "POST", body: payload });
+        const box = document.getElementById("dispatchResultBox");
+        box.style.display = "block";
+        box.textContent = res.message || "已完成多平台派发并同步台账。";
+        showToast("派发执行完成，台账已自动更新");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
+    }
+
+    /* =======================================================
+       VIEW 2 LOGIC: Full-Platform Ledger
+       ======================================================= */
+    function renderLedgerFiltersAndTable() {
+      const sel = document.getElementById("ledgerPlatformFilter");
+      const cur = sel.value;
+      const labels = Array.from(new Set((appState.ledger || []).map(r => r.platform_label).filter(Boolean)));
+      sel.innerHTML = `<option value="">全部发布平台（CH-01~09）</option>` +
+        labels.map(l => `<option value="${esc(l)}">${esc(l)}</option>`).join("");
+      if (cur) sel.value = cur;
+      renderLedgerTable();
+    }
+
+    function renderLedgerTable() {
+      const tbody = document.getElementById("ledgerTableBody");
+      const platFilter = document.getElementById("ledgerPlatformFilter").value;
+      const statusFilter = document.getElementById("ledgerStatusFilter").value;
+      const q = document.getElementById("ledgerSearchInput").value.trim().toLowerCase();
+
+      const rows = (appState.ledger || []).filter(r => {
+        if (platFilter && r.platform_label !== platFilter) return false;
+        if (statusFilter === "completed" && r.status !== "completed") return false;
+        if (statusFilter === "pending" && r.status === "completed") return false;
+        if (q) {
+          const hay = `${r.title || ""} ${r.platform_label || ""} ${r.url || ""}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      document.getElementById("ledgerFilteredCount").textContent = `共 ${rows.length} 条记录`;
+
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--ink-400);padding:28px;">没有匹配的台账记录</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map(r => {
+        const isDone = r.status === "completed";
+        const isInProg = r.status === "in_progress";
+        const statusPill = isDone
+          ? `<span class="pill pill-jade">已上线</span>`
+          : (isInProg ? `<span class="pill pill-red">草稿已填</span>` : `<span class="pill pill-mist">待发布</span>`);
+        const isOfficial = String(r.platform_label || "").includes("官网");
+        const cites = Number(r.citations || 0);
+
+        return `
+          <tr>
+            <td class="num" style="color:var(--ink-400);">#${r.id}</td>
+            <td>
+              <div style="font-weight:600;color:var(--ink-900);">${esc(r.platform_label)}</div>
+              <div style="font-size:11px;color:var(--ink-400);">${esc(r.ai_target || "")}</div>
+            </td>
+            <td>
+              <div class="ledger-title-text">${esc(r.title)}</div>
+              <div class="ledger-quick-ops">
+                <button type="button" class="btn btn-glass btn-xs" onclick="copyLedgerField(${r.id}, 'title')">复制标题</button>
+                <button type="button" class="btn btn-glass btn-xs" onclick="copyLedgerField(${r.id}, 'content')">复制正文</button>
+                ${(!isOfficial && r.account_id) ? `
+                  <button type="button" class="btn btn-glass btn-xs" onclick="ledgerBrowserAction(${r.id}, 'draft')">浏览器填稿</button>
+                  <button type="button" class="btn btn-red-soft btn-xs" onclick="ledgerBrowserAction(${r.id}, 'publish')">浏览器直发</button>
+                ` : ""}
+                <button type="button" class="btn btn-glass btn-xs" onclick="openPortableBrowser({ url: '${esc(r.url || r.editor_url || "https://www.sensteed.com/insights/")}' })">去后台 ↗</button>
+              </div>
+            </td>
+            <td>${statusPill}</td>
+            <td>
+              <div class="receipt-inline">
+                <input id="receiptInput_${r.id}" type="text" class="input" value="${esc(r.url || "")}" placeholder="粘贴发布后 https:// 链接" />
+                <button type="button" class="btn btn-glass btn-xs" onclick="saveLedgerReceipt(${r.id})">保存</button>
+              </div>
+            </td>
+            <td class="num">
+              <span class="pill ${cites > 0 ? 'pill-red' : 'pill-mist'}">${cites} 次</span>
+            </td>
+            <td class="num" style="font-size:12px;color:var(--ink-500);">${esc(r.updated_at || "")}</td>
+          </tr>`;
+      }).join("");
+    }
+
+    async function copyLedgerField(ledgerId, field) {
+      const row = (appState.ledger || []).find(r => r.id === ledgerId);
+      if (!row) return;
+      const text = field === "title" ? (row.title || "") : (row.content || row.title || "");
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(field === "title" ? "文章标题已复制到剪贴板" : "文章正文已复制到剪贴板");
+      } catch (_) {
+        showToast("剪贴板复制完成");
+      }
+    }
+
+    async function ledgerBrowserAction(ledgerId, action) {
+      const row = (appState.ledger || []).find(r => r.id === ledgerId);
+      if (!row || !row.account_id) return;
+      showToast(`正在调用内置浏览器执行「${action === "draft" ? "0 Token 自动填草稿" : "0 Token 自动直发"}」...`);
+      try {
+        const body = row.article_id
+          ? { mode: "existing", article_id: row.article_id, account_ids: [row.account_id], external_action: action }
+          : { mode: "upload", title: row.title, content: row.content || row.title, account_ids: [row.account_id], external_action: action };
+        const res = await apiFetch("/api/dispatch", { method: "POST", body });
+        showToast(res.message || "内置浏览器操作完成");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function saveLedgerReceipt(ledgerId) {
+      const inp = document.getElementById(`receiptInput_${ledgerId}`);
+      const url = inp ? inp.value.trim() : "";
+      if (!url) {
+        showToast("请先输入有效的线上真实链接", true);
+        return;
+      }
+      try {
+        await apiFetch("/api/ledger/receipt", {
+          method: "POST",
+          body: { ledger_id: Number(ledgerId), url }
+        });
+        showToast("线上真实链接已回填归档，状态已更新为「已上线」");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function exportLedgerCsv() {
+      window.location.href = "/api/ledger/export.csv";
+    }
+
+    /* =======================================================
+       VIEW 3 LOGIC: 9-Channel Matrix
+       ======================================================= */
+    function renderMatrixCards() {
+      const grid = document.getElementById("matrixCardsGrid");
+      const plats = appState.platforms || [];
+      grid.innerHTML = plats.map(p => `
+        <div class="glass-panel matrix-card">
+          <div>
+            <div class="matrix-top">
+              <span class="pill ${p.is_official || p.code === 'CH-02' || p.code === 'CH-05' ? 'pill-red' : 'pill-mist'} num">${esc(p.code)}</span>
+              <span class="pill pill-mist">${esc(p.ai_target)}</span>
+            </div>
+            <div class="matrix-name">${esc(p.short_name)}</div>
+            <div style="font-size:11.5px;color:var(--ink-400);margin-bottom:6px;">${esc(p.name)} · ${esc(p.domain || "")}</div>
+            <div class="matrix-desc">${esc(p.summary)}</div>
+          </div>
+
+          <div class="matrix-stats">
+            <div>
+              <div class="m-stat-val">${p.published_count ?? 0}</div>
+              <div class="m-stat-lbl">已发</div>
+            </div>
+            <div>
+              <div class="m-stat-val">${p.pending_count ?? 0}</div>
+              <div class="m-stat-lbl">待发</div>
+            </div>
+            <div>
+              <div class="m-stat-val" style="color:var(--shanzi-red);">${p.citation_count ?? 0}</div>
+              <div class="m-stat-lbl">翻牌</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:7px;">
+            <button type="button" class="btn ${p.code === 'CH-01' || p.code === 'CH-02' ? 'btn-primary' : 'btn-red-soft'} btn-sm" style="flex:1;"
+              onclick="openPortableBrowser({ platform: '${esc(p.hub_key)}', url: '${esc(p.editor_url)}' })">
+              <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <path d="M15 3h6v6M10 14L21 3"></path>
+              </svg>
+              <span>内置浏览器打开阵地</span>
+            </button>
+            <button type="button" class="btn btn-glass btn-sm" onclick="jumpToLedgerPlatform('${esc(p.short_name)}')">台账</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function openPortableBrowser(payload = {}) {
+      showToast("正在唤起内置便携 Chromium 浏览器...");
+      try {
+        await apiFetch("/api/browser/open", { method: "POST", body: payload });
+        showToast("已在内置便携浏览器打开目标窗口");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    /* =======================================================
+       VIEW 4 LOGIC: AI Visibility Scorecard
+       ======================================================= */
+    function normalizeExamQuestions() {
+      const raw = appState.exam_questions;
+      let questions = [];
+      let competitors = ["万里扬", "均胜电子", "精进电动", "华海诚科", "德邦科技"];
+      if (Array.isArray(raw)) {
+        questions = raw;
+      } else if (raw && typeof raw === "object") {
+        if (Array.isArray(raw.questions)) questions = raw.questions;
+        if (Array.isArray(raw.competitors) && raw.competitors.length) competitors = raw.competitors;
+      }
+      if (Array.isArray(appState.competitors) && appState.competitors.length) {
+        competitors = appState.competitors;
+      }
+      if (!questions.length) questions = FALLBACK_EXAM_QUESTIONS;
+      return { questions, competitors };
+    }
+
+    function renderScorecardView() {
+      const runs = appState.citation_runs || [];
+      const latest = runs[0] || null;
+      const fallbackCite = Number(appState.summary?.citation_rate ?? 0);
+
+      document.getElementById("scoreMetricCitation").textContent =
+        `${Number(latest ? latest.our_citation_rate : fallbackCite).toFixed(1)}%`;
+      document.getElementById("scoreMetricUnprompted").textContent =
+        `${Number(latest ? latest.unprompted_rate : 0).toFixed(1)}%`;
+      document.getElementById("scoreMetricSensitive").textContent =
+        `${Number(latest ? latest.sensitive_accuracy : 0).toFixed(1)}%`;
+      document.getElementById("metric1SourceTag").textContent =
+        latest ? `${latest.engine} · ${latest.run_date}` : "实时台账基线";
+
+      const { questions, competitors } = normalizeExamQuestions();
+      document.getElementById("competitorListBadge").textContent =
+        `对标同行：${competitors.join(" / ")}`;
+
+      const groupLabelMap = {
+        industry_unprompted: "A组·行业无提示",
+        sensitive_clarification: "B组·敏感澄清",
+        brand_core: "C组·品牌全景"
+      };
+      document.getElementById("examQuestionsList").innerHTML = questions.map((q, idx) => {
+        const gLabel = groupLabelMap[q.group] || "标准考题";
+        const checkpoints = Array.isArray(q.must_include_any) && q.must_include_any.length
+          ? `必含锚点：${q.must_include_any.join(" / ")}`
+          : (q.keyword ? `测试维度：${q.keyword}` : "");
+        return `
+          <div class="exam-q-item">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                <span class="pill ${q.group === 'sensitive_clarification' ? 'pill-red' : 'pill-mist'} num">${esc(q.id || `Q${idx + 1}`)}</span>
+                <span style="font-size:11.2px;color:var(--ink-500);font-weight:600;">${esc(gLabel)}</span>
+              </div>
+              <div style="font-size:12.8px;font-weight:600;color:var(--ink-900);">${esc(q.text)}</div>
+              ${checkpoints ? `<div style="font-size:11.2px;color:var(--ink-400);margin-top:2px;">${esc(checkpoints)}</div>` : ""}
+            </div>
+            <button type="button" class="btn btn-glass btn-xs" onclick="copyText('${esc(q.text).replace(/'/g, "\\'")}')">复制考题</button>
+          </div>`;
+      }).join("");
+
+      const tbody = document.getElementById("baselineRunsTableBody");
+      if (!runs.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--ink-400);padding:22px;">尚无历史周度登记，可在右上方录入首轮豆包 / DeepSeek 联网实测结果</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = runs.map(r => {
+        let urls = [];
+        try {
+          urls = Array.isArray(r.cited_urls) ? r.cited_urls : JSON.parse(r.cited_urls_json || "[]");
+        } catch (_) { urls = []; }
+        let notes = r.notes || "";
+        if (!notes && r.details_json) {
+          try {
+            const dj = JSON.parse(r.details_json);
+            notes = dj.notes || "";
+          } catch (_) { notes = ""; }
+        }
+        return `
+          <tr>
+            <td class="num">#${r.id}</td>
+            <td class="num">${esc(r.run_date || r.created_at || "")}</td>
+            <td style="font-weight:600;">${esc(r.engine)}</td>
+            <td class="num"><span class="pill pill-red">${Number(r.our_citation_rate || 0).toFixed(1)}%</span></td>
+            <td class="num">${Number(r.unprompted_rate || 0).toFixed(1)}%</td>
+            <td class="num"><span class="pill pill-jade">${Number(r.sensitive_accuracy || 0).toFixed(1)}%</span></td>
+            <td class="num">${urls.length} 条</td>
+            <td style="color:var(--ink-600);font-size:12px;">${esc(notes || "-")}</td>
+          </tr>`;
+      }).join("");
+    }
+
+    async function copyText(txt) {
+      try {
+        await navigator.clipboard.writeText(txt);
+      } catch (_) {}
+      showToast("标准考题已复制，可粘贴至豆包或 DeepSeek 联网提问");
+    }
+
+    async function submitBaselineRun() {
+      const engine = document.getElementById("baseEngine").value;
+      const our_citation_rate = Number(document.getElementById("baseRateCitation").value || 0);
+      const unprompted_rate = Number(document.getElementById("baseRateUnprompted").value || 0);
+      const sensitive_accuracy = Number(document.getElementById("baseRateSensitive").value || 0);
+      const cited_urls = document.getElementById("baseCitedUrls").value
+        .split(/\r?\n|,/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      const notes = document.getElementById("baseNotes").value.trim();
+
+      try {
+        await apiFetch("/api/baseline/record", {
+          method: "POST",
+          body: { engine, our_citation_rate, unprompted_rate, sensitive_accuracy, cited_urls, notes }
+        });
+        document.getElementById("baseCitedUrls").value = "";
+        document.getElementById("baseNotes").value = "";
+        showToast("本周 AI 可见性成绩单已归档，匹配链接翻牌次数已同步累加");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    /* =======================================================
+       VIEW 5 LOGIC: Assets CRUD & System Settings
+       ======================================================= */
+    function renderAssetsAndSettings() {
+      const tLibs = appState.title_libraries || [];
+      const titles = appState.titles || [];
+      const kwLibs = appState.keyword_libraries || [];
+      const kws = appState.keywords || [];
+      const kbs = appState.knowledge_bases || [];
+
+      document.getElementById("assetsMetaSummary").textContent =
+        `${kbs.length} 大知识库 · ${titles.length} 母题 · ${kws.length} 关键词`;
+
+      // Title library dropdown
+      const tlSel = document.getElementById("newTitleLibSelect");
+      const prevTl = tlSel.value;
+      tlSel.innerHTML = tLibs.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join("");
+      if (prevTl) tlSel.value = prevTl;
+      renderTitleAssets();
+
+      // Keyword library dropdown
+      const klSel = document.getElementById("newKwLibSelect");
+      const prevKl = klSel.value;
+      klSel.innerHTML = kwLibs.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join("");
+      if (prevKl) klSel.value = prevKl;
+      renderKeywordAssets();
+
+      // Knowledge Bases
+      if (!selectedKbId && kbs.length) selectedKbId = kbs[0].id;
+      renderKbAssets();
+
+      // Settings Masked
+      const sm = appState.settings_masked || {};
+      document.getElementById("cfgLlmUrl").value = sm.llm_api_url || "";
+      document.getElementById("cfgLlmModel").value = sm.llm_model_id || "deepseek-v4.1-flash";
+      document.getElementById("cfgOfficialUrl").value = sm.official_endpoint_url || "https://www.sensteed.com/insights";
+      document.getElementById("cfgOfficialKeyId").value = sm.official_key_id || "";
+      document.getElementById("cfgCdpPort").value = sm.cdp_port || 9233;
+
+      const llmBadge = document.getElementById("llmKeyBadge");
+      llmBadge.textContent = sm.has_llm_key ? "API Key 已安全配置" : "未配置密钥";
+      llmBadge.className = "pill " + (sm.has_llm_key ? "pill-jade" : "pill-red");
+
+      const offBadge = document.getElementById("officialSecretBadge");
+      offBadge.textContent = sm.has_official_secret ? "签名密钥已就绪" : "未配置签名密钥";
+      offBadge.className = "pill " + (sm.has_official_secret ? "pill-jade" : "pill-red");
+
+      document.getElementById("runtimeDiagnosticsText").textContent =
+        `便携浏览器路径：${appState.chromium_path || "未检测到便携包，自动回退系统浏览器"}  |  本地数据目录：${appState.data_dir || "./data"}`;
+    }
+
+    function renderTitleAssets() {
+      const libMap = {};
+      (appState.title_libraries || []).forEach(l => { libMap[l.id] = l.name; });
+      const titles = appState.titles || [];
+      const tbody = document.getElementById("titlesTableBody");
+      tbody.innerHTML = titles.map(t => `
+        <tr>
+          <td class="num" style="color:var(--ink-400);">#${t.id}</td>
+          <td><span class="pill pill-mist">${esc(libMap[t.library_id] || `分类 #${t.library_id}`)}</span></td>
+          <td style="font-weight:550;color:var(--ink-900);">${esc(t.title)}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button type="button" class="btn btn-red-soft btn-xs" onclick="useTitleToWrite('${esc(t.title).replace(/'/g, "\\'")}')">去写稿</button>
+              <button type="button" class="btn btn-glass btn-xs" onclick="deleteTitleAsset(${t.id})">删除</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function useTitleToWrite(title) {
+      setComposeMode("ai");
+      document.getElementById("customTopicInput").value = title;
+      switchView("compose");
+      showToast("已将所选母题带入创作中心");
+    }
+
+    async function addTitleAsset() {
+      const library_id = Number(document.getElementById("newTitleLibSelect").value || 1);
+      const title = document.getElementById("newTitleInput").value.trim();
+      if (!title) {
+        showToast("请输入新增母题标题", true);
+        return;
+      }
+      try {
+        await apiFetch("/api/assets/title", { method: "POST", body: { library_id, title } });
+        document.getElementById("newTitleInput").value = "";
+        showToast("标准母题已添加入库");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function deleteTitleAsset(id) {
+      try {
+        await apiFetch(`/api/assets/title/${id}`, { method: "DELETE" });
+        showToast("母题已删除");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function renderKeywordAssets() {
+      const box = document.getElementById("keywordsGroupsContainer");
+      const libs = appState.keyword_libraries || [];
+      const kws = appState.keywords || [];
+      box.innerHTML = libs.map(lib => {
+        const items = kws.filter(k => k.library_id === lib.id);
+        return `
+          <div class="glass-subcard" style="padding:11px 13px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-weight:650;color:var(--ink-900);">${esc(lib.name)}</span>
+              <span class="pill pill-mist num">${items.length} 词</span>
+            </div>
+            <div class="kw-cloud">
+              ${items.map(k => `
+                <span class="kw-chip">
+                  <span>${esc(k.keyword)}</span>
+                  <button type="button" class="kw-del-btn" title="删除" onclick="deleteKeywordAsset(${k.id})">
+                    <svg class="svg-icon" style="width:12px;height:12px;" viewBox="0 0 24 24">
+                      <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </span>
+              `).join("")}
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    async function addKeywordAsset() {
+      const library_id = Number(document.getElementById("newKwLibSelect").value || 1);
+      const keyword = document.getElementById("newKwInput").value.trim();
+      if (!keyword) {
+        showToast("请输入要添加的关键词", true);
+        return;
+      }
+      try {
+        await apiFetch("/api/assets/keyword", { method: "POST", body: { library_id, keyword } });
+        document.getElementById("newKwInput").value = "";
+        showToast("关键词已批量入库");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function deleteKeywordAsset(id) {
+      try {
+        await apiFetch(`/api/assets/keyword/${id}`, { method: "DELETE" });
+        showToast("关键词已移除");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function renderKbAssets() {
+      const kbs = appState.knowledge_bases || [];
+      const col = document.getElementById("kbListColumn");
+      col.innerHTML = `<div class="field-label">三大官方事实基准库</div>` + kbs.map(kb => `
+        <div class="kb-nav-item ${kb.id === selectedKbId ? 'active' : ''}" onclick="selectKb(${kb.id})">
+          <div style="font-size:12.8px;font-weight:650;color:var(--ink-900);margin-bottom:3px;">${esc(kb.name)}</div>
+          <div class="num" style="font-size:11px;color:var(--ink-400);">更新：${esc(kb.updated_at || "")} · ${(kb.content || "").length} 字</div>
+        </div>
+      `).join("");
+
+      const activeKb = kbs.find(k => k.id === selectedKbId) || kbs[0];
+      if (activeKb) {
+        selectedKbId = activeKb.id;
+        document.getElementById("kbEditName").value = activeKb.name || "";
+        document.getElementById("kbEditContent").value = activeKb.content || "";
+        document.getElementById("kbUpdatedBadge").textContent = `KB #${activeKb.id} · 更新于 ${activeKb.updated_at || "-"}`;
+      }
+    }
+
+    function selectKb(id) {
+      selectedKbId = id;
+      renderKbAssets();
+    }
+
+    async function saveKnowledgeBase() {
+      if (!selectedKbId) return;
+      const name = document.getElementById("kbEditName").value.trim();
+      const content = document.getElementById("kbEditContent").value;
+      if (!content.trim()) {
+        showToast("知识库内容不能为空", true);
+        return;
+      }
+      try {
+        await apiFetch(`/api/assets/kb/${selectedKbId}`, {
+          method: "PUT",
+          body: { name, content }
+        });
+        showToast("官方事实知识库已保存更新");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function saveSystemSettings() {
+      const payload = {
+        llm_api_url: document.getElementById("cfgLlmUrl").value.trim(),
+        llm_model_id: document.getElementById("cfgLlmModel").value.trim(),
+        official_endpoint_url: document.getElementById("cfgOfficialUrl").value.trim(),
+        official_key_id: document.getElementById("cfgOfficialKeyId").value.trim(),
+        cdp_port: Number(document.getElementById("cfgCdpPort").value || 9233)
+      };
+      const llmKey = document.getElementById("cfgLlmKey").value.trim();
+      if (llmKey) payload.llm_api_key = llmKey;
+      const offSec = document.getElementById("cfgOfficialSecret").value.trim();
+      if (offSec) payload.official_secret = offSec;
+
+      try {
+        await apiFetch("/api/settings", { method: "POST", body: payload });
+        document.getElementById("cfgLlmKey").value = "";
+        document.getElementById("cfgOfficialSecret").value = "";
+        showToast("系统连接配置已安全保存至本地 settings.json");
+        await loadState(false);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function testOfficialHealth() {
+      const out = document.getElementById("officialHealthResultText");
+      if (out) out.textContent = "正在执行 HMAC 签名握手检测...";
+      try {
+        const res = await apiFetch("/api/official/health", { method: "POST", body: {} });
+        const msg = `官网直发接口健康连通（${res.site || "sensteed.com/insights"}）`;
+        if (out) out.textContent = msg;
+        showToast(msg);
+      } catch (err) {
+        if (out) out.textContent = `连接异常：${err.message}`;
+        showToast(err.message, true);
+      }
+    }
+
+    /* Keyboard Shortcuts (/ quick search, Ctrl+, settings) */
+    document.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === ",") {
+        e.preventDefault();
+        switchView("assets", "settings");
+      } else if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        switchView("ledger");
+        setTimeout(() => document.getElementById("ledgerSearchInput")?.focus(), 40);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initDropzone();
+      loadState(false);
+    });
+  </script>
+</body>
+</html>

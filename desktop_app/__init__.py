@@ -1,0 +1,1 @@
+"""ShanziGEO Standalone Desktop Application."""

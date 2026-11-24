@@ -16,3 +16,9 @@ video-workflow/
 geoflow_config/sensteed_insights_agent/config.php
 geoflow_config/sensteed_insights_agent/storage/articles/*.json
 geoflow_config/sensteed_insights_agent/storage/manifest.json
+data/
+dist/
+build/
+*.spec
+*.log
+
