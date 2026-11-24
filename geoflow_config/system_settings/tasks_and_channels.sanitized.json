@@ -115,6 +115,25 @@
       "ai_quality_manual_override_min_score": 70,
       "ai_quality_retrieval_mode": "knowledge_broad",
       "ai_quality_auto_optimize_enabled": false
+    },
+    {
+      "id": 4,
+      "name": "【主力四·抖音专用】山子高科·抖音200字网页摘要与60秒口播稿",
+      "title_library_id": 1,
+      "prompt_id": 9,
+      "prompt_file": "prompts/prompt_09_douyin_summary_script.md",
+      "knowledge_base_ids": [
+        3
+      ],
+      "fixed_category_id": 1,
+      "publish_scope": "local",
+      "distribution_channel_ids": [],
+      "ai_quality_enabled": true,
+      "ai_quality_prompt_id": 10,
+      "ai_quality_pass_score": 80,
+      "ai_quality_manual_override_min_score": 70,
+      "ai_quality_retrieval_mode": "knowledge_broad",
+      "ai_quality_auto_optimize_enabled": false
     }
   ],
   "distribution_channels_sanitized": [
@@ -220,76 +239,76 @@
   ],
   "publication_channels_sop": [
     {
-      "id": 1,
-      "platform": "custom",
-      "custom_platform": "东方财富(股吧+财富号电脑端)",
-      "account_name": "东方财富——山子高科股吧与财富号（电脑端）",
-      "profile_url": "https://guba.eastmoney.com/list,000981.html",
-      "notes": "【S级 DeepSeek 第一大民间信源（实测79题/207条）】SOP：优先在PC端同步开通「财富号」发表1300-1800字结构化长文（带120字核心事实卡+Markdown表格），并在000981股吧发布置顶精炼Q&A；长文首段必带山子高科(000981.SZ)+邦奇/ARC/半导体锚点；每周至少2篇。"
-    },
-    {
-      "id": 2,
-      "platform": "custom",
-      "custom_platform": "同花顺股吧(手机端)+互动易同步",
-      "account_name": "同花顺——山子高科股吧与F10问答（手机端）",
-      "profile_url": "https://basic.10jqka.com.cn/000981/",
-      "notes": "【S级 DeepSeek 第一高覆盖信源（实测80题/202条）】SOP：实测显示DeepSeek主要抓取basic.10jqka.com.cn下的深交所互动易官方问答与F10页，建议证券部协同将核心26母题口径沉淀为互动易正式回复；日常配合手机端股吧短问答卡强化澄清与主业认知。"
-    },
-    {
       "id": 3,
       "platform": "custom",
-      "custom_platform": "官网关键信息栏(sensteed.com)",
-      "account_name": "山子高科官网——关键信息栏（sensteed.com）",
-      "profile_url": "https://www.sensteed.com/",
-      "notes": "【S级 豆包核心信源（实测50题/145条），DeepSeek仅19题/35条】SOP：发布前务必同步推进IT 4项整改——①动态独立<title>（解决新闻标题全写“新闻动态>媒体中心>山子高科”）；②静态化URL（避免view.php?id=）；③官网关键信息栏增设26题FAQ专题与FAQPage Schema；④补充邦奇/ARC/半导体专页正文文本（非纯图片）。"
+      "custom_platform": "官网——关键信息板块",
+      "account_name": "① 官网——关键信息板块（18081一键自动直发，无需手贴）",
+      "profile_url": "https://www.sensteed.com/insights/",
+      "notes": "【S级·全自动已打通】在「内容管理」点发布/同步即可1秒自动生成静态页至 sensteed.com/insights/，并自动刷新双Sitemap、llms.txt及秒推百度API，无需人工复制粘贴！"
     },
     {
-      "id": 4,
-      "platform": "custom",
-      "custom_platform": "新浪财经头条(优先完成资质入驻)",
-      "account_name": "新浪财经头条（需提交上市公司/官方创作者资质入驻）",
-      "profile_url": "https://finance.sina.com.cn/",
-      "notes": "【S级 双引擎高权重交叉信源（豆包53题/94条 + DeepSeek64题/138条+移动22条）】SOP：本周重点督办提交上市公司企业资质认证完成入驻！入驻后作为重大澄清（如2026-040哪吒重整澄清）、三季报客观拆解、半导体与邦奇电驱首发主阵地。"
+      "id": 10,
+      "platform": "toutiao",
+      "custom_platform": null,
+      "account_name": "② 今日头条（喂豆包头号主力阵地）",
+      "profile_url": "https://mp.toutiao.com/",
+      "notes": "【S级·豆包亲儿子直抓源】点击跳转 mp.toutiao.com 头条号后台，优先同步主力一/二/三生成的过检专稿与问答澄清稿，发布后把头条文章URL回填至工单以便量化豆包引用率！"
     },
     {
       "id": 5,
       "platform": "sohu",
       "custom_platform": null,
-      "account_name": "搜狐号（电脑端）",
-      "profile_url": "https://www.sohu.com/",
-      "notes": "【A级 DeepSeek 核心门户信源（实测52题/90条；豆包仅6条）】SOP：用「赛道盘点与同业横向对比」Prompt B 改写PC端深度行业稿（避免和财富号完全同质重复），重点攻坚非品牌发现题C01/C02/C22/C24与半导体协同拆解。"
+      "account_name": "③ 搜狐号（喂DeepSeek门户主力）",
+      "profile_url": "https://mp.sohu.com/",
+      "notes": "【A级·DeepSeek核心门户源】点击跳转 mp.sohu.com 创作后台，复制主力一/二生成的过检深度稿发表，发完把搜狐文章链接回填至工单以便追踪收录。"
     },
     {
       "id": 6,
       "platform": "netease",
       "custom_platform": null,
-      "account_name": "网易号（电脑端）",
-      "profile_url": "https://www.163.com/",
-      "notes": "【A级 DeepSeek 增量门户信源（实测21条；豆包0条）】SOP：承担DeepSeek侧长尾检索权重补位，PC端发布结构化产业纵深分析、欧洲减债19.4亿元与专户拍卖2.925亿元补流客观看法等长文。"
+      "account_name": "④ 网易号（喂DeepSeek门户补位）",
+      "profile_url": "https://mp.163.com/",
+      "notes": "【A级·DeepSeek增量门户源】点击跳转 mp.163.com 创作后台，发表产业协同与财报客观拆解长文，发完回填网易文章链接。"
+    },
+    {
+      "id": 1,
+      "platform": "custom",
+      "custom_platform": "东方财富山子高科股吧/财富号",
+      "account_name": "⑤ 东方财富——山子高科股吧（必发独立主帖/财富号）",
+      "profile_url": "https://guba.eastmoney.com/list,000981.html",
+      "notes": "【S级·DeepSeek头号财经源】⚠️避坑：切勿只回别人评论区！请点「发新帖」发表带完整标题的独立主帖（或开通财富号发长文），发完将独立帖子URL贴回工单。"
+    },
+    {
+      "id": 2,
+      "platform": "custom",
+      "custom_platform": "同花顺山子高科社区",
+      "account_name": "⑥ 同花顺——山子高科社区（必发独立主帖）",
+      "profile_url": "https://basic.10jqka.com.cn/000981/",
+      "notes": "【S级·DeepSeek高覆盖财经源】⚠️避坑：切勿只发楼中楼评论！请发表带完整标题的独立主帖/问答卡（主力三），并协同证券部在深交所互动易沉淀标准回复。"
     },
     {
       "id": 7,
       "platform": "douyin",
       "custom_platform": null,
-      "account_name": "抖音（含网页端 iesdouyin.com 200字摘要优化）",
-      "profile_url": "https://www.douyin.com/",
-      "notes": "【A级 豆包独占流量抓取位（实测iesdouyin.com 21条 vs DeepSeek 0条）】SOP：重点不是拍炫酷剪辑，而是必须填满作品「200字网页文字简介区」与结构化标题，直接使用 Prompt C 生成的200字高密度事实摘要+邦奇/ARC/芯片半导体实景画面口播！"
+      "account_name": "⑦ 抖音（必填200字网页文字简介喂豆包）",
+      "profile_url": "https://creator.douyin.com/",
+      "notes": "【A级·豆包独占视频源】点击跳转 creator.douyin.com 发布视频。⚠️关键动作：必须把「主力四·抖音专用」生成的200字高密度事实摘要填满作品文字简介区（豆包抓简介文字，不看视频画面）！"
     },
     {
       "id": 8,
       "platform": "wechat",
       "custom_platform": null,
-      "account_name": "微信公众号（山子高科官方号）",
-      "profile_url": null,
-      "notes": "【B级 母稿权威背书源（实测两模型直接检索均为0条）】SOP：公众号封闭生态不被外部搜索引擎直接抓全文，定位调整为「视觉母稿与投资者信任背书」——在公众号发表后，24小时内同步搬运文本到官网关键信息栏（独立URL+Title）及新浪财经/财富号/搜狐实现AI收录。"
+      "account_name": "⑧ 微信公众号（喂腾讯元宝+官方母稿）",
+      "profile_url": "https://mp.weixin.qq.com/",
+      "notes": "【腾讯元宝AI独占源+官方权威母稿】点击跳转 mp.weixin.qq.com 发表图文；因豆包/DeepSeek无法抓取公众号全文，发表后务必确保官网关键信息板块与今日头条/搜狐号已同步。"
     },
     {
       "id": 9,
       "platform": "xiaohongshu",
       "custom_platform": null,
-      "account_name": "小红书",
-      "profile_url": null,
-      "notes": "【C级 封闭生态补充触达（实测两模型直接检索均为0条）】SOP：定位为C端图文口碑与投资者日常认知触达，低成本复用抖音/股吧的图文卡片（3-4张核心数据卡即可），不作为冲刺豆包/DeepSeek收录率的主战力。"
+      "account_name": "⑨ 小红书（散户图文卡片日常触达）",
+      "profile_url": "https://creator.xiaohongshu.com/",
+      "notes": "【C端图文补充（豆包/DeepSeek不抓）】点击跳转 creator.xiaohongshu.com，直接低成本复用抖音/股吧的3-4张核心数据图卡顺手发布即可。"
     }
   ],
   "recommended_expansion_channels": [
