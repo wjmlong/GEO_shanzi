@@ -10,28 +10,43 @@
 > - 首页 `<head>` 已写入 `<meta name="bytedance-verification-code" content="pYOH6kJPhe2BRxJr+Oi9" />`（同步覆盖源码模板 `gb_header.html.php`、`en_header.html.php` 与编译缓存 `tpl_default_gb_header.php`、`tpl_default_en_header.php`，并保留根目录历史 `ByteDanceVerify.html`）。
 > - 为保持站点验证状态，后续更新头部模板时**请勿删除该 `<meta>` 标签**。
 
-### 操作步骤
-1. 在 **头条搜索站长平台**（https://zhanzhang.toutiao.com/ ）验证页面直接点击蓝色 **「验证」** 按钮完成所有权绑定。
-2. 验证通过后，左侧菜单点击 **「数据提交」 → 「自动收录」 / 「Sitemap」**（或 **「链接提交」**）。
-3. 依次填入以下两条 Sitemap 地址并提交（提交一次即可每日自动巡检抓取）：
-   - `https://www.sensteed.com/insights/sitemap.xml`
-   - `https://www.sensteed.com/sitemap.xml`
-4. 如需让单篇新稿件最快进入索引，也可在 **「链接提交」** 中一次性粘贴当前 `/insights/article/*.html` 文章链接主动推送。
+### 实测排障：提示「验证失败，该站点已经被注册」怎么办？
+官网根目录在 **2023-11-21** 已由历史经办人/建站服务商上传过 `ByteDanceVerify.html`，说明 `www.sensteed.com` **早已在头条站长平台完成过认证入库**（头条实行单域名唯一账号绑定机制，旧账号未解绑前新账号无法重复绑定）：
+1. **不影响当前抓取闭环**：由于我们已将 `/insights/` 全部文章自动实时合并进主站原有的 `https://www.sensteed.com/sitemap.xml`，并在首页放置了真实 HTML 链接 `<a href="/insights/">关键信息</a>` 及 `robots.txt` 双声明，头条蜘蛛（`Bytespider`）沿原有主站 Sitemap 与首页巡检即可自动抓取全部新文章。
+2. **10 秒快速排查协议差异**：点击「上一步」，确认第一步协议下拉框选的是 `http://` 还是 `https://`；若此前旧账号绑的是 `http://www.sensteed.com`，切换为 `https://www.sensteed.com` 可尝试独立验证。
+3. **取回站点管理权的两种方式**：
+   - **内部交接（最快）**：联系 2023 年 11 月负责官网建站/运维的同事或服务商（浙江星动），登录原头条号在「站点管理」中删除解绑后，当前账号点「验证」即可秒过。
+   - **官方申诉强制解绑**：点击头条站长平台顶部「联系我们」（或发邮件至 `zhanzhang@bytedance.com`），附上**山子高科技股份有限公司营业执照扫描件 + ICP 备案截图（`陇ICP备17001116号-5`）+ 阿里云万网主机控制台截图**，申请强制解除 `www.sensteed.com` 的历史账号绑定。
 
 ---
 
-## 二、百度搜索资源平台提交（补充国内通用与大模型索引）
+## 二、百度搜索资源平台提交（站点已验证成功！）
 
-> **状态：HTML 标签验证已部署上线**
-> - 首页 `<head>` 已写入 `<meta name="baidu-site-verification" content="codeva-BYRCEuMkkZ" />`（与根目录历史 `baidu_verify_codeva-S03vsLYuKY.html` 并存，互不影响）。
-> - 为保持站点验证状态，后续更新头部模板时**请勿删除该 `<meta>` 标签**。
+> **状态：站点所有权验证已通过（`https://www.sensteed.com`）**
+> - 首页 `<head>` 已写入 `<meta name="baidu-site-verification" content="codeva-BYRCEuMkkZ" />`（与根目录历史 `baidu_verify_codeva-S03vsLYuKY.html` 并存，请勿删除）。
 
-### 操作步骤
-1. 在 **百度搜索资源平台**（https://ziyuan.baidu.com/ ）第三步验证页面直接点击蓝色 **「完成验证」** 按钮。
-2. 进入 **「搜索服务」 → 「普通收录」 → 「资源提交」 → 「Sitemap」**。
-3. 依次填入并提交：
-   - `https://www.sensteed.com/insights/sitemap.xml`
-   - `https://www.sensteed.com/sitemap.xml`
+### 为什么 `sitemap` 标签页显示「今日提交上限：0条」？如何立刻提交？
+百度近年对新绑定账号默认关闭 `sitemap` 文件提交配额（显示 0 条），但**不影响立即推送收录**，请直接用以下 3 个现成通道：
+
+1. **通道 A：`普通收录` → `手动提交`（立即可用，每次最多 20 条）**
+   切到蓝色的 **「手动提交」** 标签页，直接把当前 `/insights/` 全部 10 条链接一次性粘贴进去点击 **「提交」**：
+   ```text
+   https://www.sensteed.com/insights/
+   https://www.sensteed.com/insights/article/y2mdwbg5.html
+   https://www.sensteed.com/insights/article/bzpigrtn.html
+   https://www.sensteed.com/insights/article/7ttgnthv.html
+   https://www.sensteed.com/insights/article/keyinfo-304.html
+   https://www.sensteed.com/insights/article/keyinfo-303.html
+   https://www.sensteed.com/insights/article/keyinfo-302.html
+   https://www.sensteed.com/insights/article/keyinfo-301.html
+   https://www.sensteed.com/insights/article/keyinfo-300.html
+   https://www.sensteed.com/insights/article/keyinfo-299.html
+   ```
+2. **通道 B：`普通收录` → `API提交`（查看接口 Token 实现自动推送）**
+   点击 **「API提交」** 标签页获取形如 `http://data.zz.baidu.com/urls?site=https://www.sensteed.com&token=xxxxxx` 的推送接口地址，后续每次新发文章可直接通过脚本调用 API 主动推送。
+3. **通道 C：左侧 `数据统计` → `Robots` 点「更新文件」 + `站点信息` 关联备案号**
+   - 在左侧 **「Robots」** 页面点击 **「更新文件」**，让百度立即重读 `https://www.sensteed.com/robots.txt`（内含两条 `Sitemap:` 声明，百度蜘蛛仍会按 `robots.txt` 自然发现并抓取 Sitemap）；
+   - 在左侧 **「站点信息」** 中关联公司备案号 `陇ICP备17001116号-5` 并完善站点属性，有助于后续提升配额。
 
 ---
 
