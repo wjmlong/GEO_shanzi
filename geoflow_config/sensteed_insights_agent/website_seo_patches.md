@@ -22,3 +22,4 @@
 2. **历史文章页唯一 `<h1>` 修复**：在 `gb_banner.html.php`、`gb_new_view.html.php` 与 `view.php` 中，将详情页顶部栏目名由 `<h1>` 改为等视觉样式 `<div>`，将文章真标题提升为页面唯一 `<h1>`，并将富文本正文内嵌 `<h1>` 自动降级为 `<h2>`。
 3. **清除历史曾用名链接遗留**：将页脚站点地图中深交所信息披露外链的旧参数 `ST银亿` 更新为 `山子高科`（HTTPS）。
 4. **`robots.txt` 双 Sitemap 声明与 `IndexNow` 主动推送**：同时声明 `https://www.sensteed.com/sitemap.xml` 与 `https://www.sensteed.com/insights/sitemap.xml`，并在根目录配置 `IndexNow` 验证文件主动推送新 URL。
+5. **头条搜索与百度搜索资源平台 HTML 所有权验证标签**：在主站中英文头部源码模板（`gb_header.html.php`、`en_header.html.php`）及 XYCMS 编译缓存（`tpl_default_gb_header.php`、`tpl_default_en_header.php`）的 `<head>` 内同步写入 `bytedance-verification-code` 与 `baidu-site-verification` 两条 `<meta>` 标签，与根目录历史验证文件并存，请勿删除。

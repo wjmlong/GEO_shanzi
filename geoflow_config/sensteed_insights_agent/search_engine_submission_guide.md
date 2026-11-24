@@ -6,33 +6,30 @@
 
 ## 一、头条搜索站长平台提交（打通「豆包」最快通道）
 
-> 官网根目录已存在历史字节验证文件 `https://www.sensteed.com/ByteDanceVerify.html`（创建时间 2023-11-21）。
+> **状态：HTML 标签验证已部署上线**
+> - 首页 `<head>` 已写入 `<meta name="bytedance-verification-code" content="pYOH6kJPhe2BRxJr+Oi9" />`（同步覆盖源码模板 `gb_header.html.php`、`en_header.html.php` 与编译缓存 `tpl_default_gb_header.php`、`tpl_default_en_header.php`，并保留根目录历史 `ByteDanceVerify.html`）。
+> - 为保持站点验证状态，后续更新头部模板时**请勿删除该 `<meta>` 标签**。
 
-### 情况 A：能找到公司之前注册头条站长平台的账号
-1. 浏览器打开 **头条搜索站长平台**：https://zhanzhang.toutiao.com/ 并登录。
-2. 进入 **「站点管理」**，点击已验证的 `https://www.sensteed.com`。
-3. 左侧菜单点击 **「数据提交」 → 「Sitemap 提交」**。
-4. 依次填入以下两条地址并点击提交（提交一次即可永久自动抓取）：
+### 操作步骤
+1. 在 **头条搜索站长平台**（https://zhanzhang.toutiao.com/ ）验证页面直接点击蓝色 **「验证」** 按钮完成所有权绑定。
+2. 验证通过后，左侧菜单点击 **「数据提交」 → 「自动收录」 / 「Sitemap」**（或 **「链接提交」**）。
+3. 依次填入以下两条 Sitemap 地址并提交（提交一次即可每日自动巡检抓取）：
    - `https://www.sensteed.com/insights/sitemap.xml`
    - `https://www.sensteed.com/sitemap.xml`
-
-### 情况 B：找不到之前的旧账号（直接绑到你自己手机号下，1 分钟搞定）
-因为我们拥有官网虚拟主机根目录权限，**不需要找旧账号**，可以直接用你自己的账号新增绑定：
-1. 打开 https://zhanzhang.toutiao.com/ ，用你的手机号或今日头条账号注册登录。
-2. 点击 **「站点管理」 → 「添加网站」**，协议选 `https://`，填入 `www.sensteed.com`。
-3. 验证方式建议选 **「HTML 标签验证」** 或 **「文件验证」**：
-   - 若选**文件验证**：注意如果平台生成的文件名仍叫 `ByteDanceVerify.html`，直接覆盖会导致旧账号掉线；优先选 **「HTML 标签验证」**（在首页 `<head>` 加一行 `<meta name="bytedance-verification-code" content="..." />`，可多账号并存！）。
-4. 把平台给你的那行 `<meta ...>` 验证代码发给 AI 助手（或放入官网 `gb_header.html.php`），上传后回网页点 **「完成验证」** 即可立即生效，随后按「情况 A」第 3–4 步提交两条 Sitemap 即可。
+4. 如需让单篇新稿件最快进入索引，也可在 **「链接提交」** 中一次性粘贴当前 `/insights/article/*.html` 文章链接主动推送。
 
 ---
 
 ## 二、百度搜索资源平台提交（补充国内通用与大模型索引）
 
-> 官网根目录同样已存在百度验证文件 `https://www.sensteed.com/baidu_verify_codeva-S03vsLYuKY.html`。
+> **状态：HTML 标签验证已部署上线**
+> - 首页 `<head>` 已写入 `<meta name="baidu-site-verification" content="codeva-BYRCEuMkkZ" />`（与根目录历史 `baidu_verify_codeva-S03vsLYuKY.html` 并存，互不影响）。
+> - 为保持站点验证状态，后续更新头部模板时**请勿删除该 `<meta>` 标签**。
 
-1. 打开 **百度搜索资源平台**：https://ziyuan.baidu.com/ 登录（若找不到旧账号，同样可用 **HTML 标签验证** 新增绑定到自己账号）。
+### 操作步骤
+1. 在 **百度搜索资源平台**（https://ziyuan.baidu.com/ ）第三步验证页面直接点击蓝色 **「完成验证」** 按钮。
 2. 进入 **「搜索服务」 → 「普通收录」 → 「资源提交」 → 「Sitemap」**。
-3. 填入并提交：
+3. 依次填入并提交：
    - `https://www.sensteed.com/insights/sitemap.xml`
    - `https://www.sensteed.com/sitemap.xml`
 
