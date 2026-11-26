@@ -9,9 +9,9 @@
    - 独立 `<title>文章真标题 - 山子高科(000981)</title>`
    - 独立 `<meta name="description">` 与 `<meta name="keywords">`
    - 唯一文章真标题 `<h1>` + 规范化 `<h2>`/`<h3>`/`<table>` 语义层级
-   - 自动注入 `NewsArticle` JSON-LD，并在检测到问答结构时自动提取生成 `FAQPage` JSON-LD
+   - 自动注入 `@graph` 结构化数据（`Corporation` 上市公司实体 `#corporation` + `NewsArticle` + `BreadcrumbList` 面包屑 + 自动识别 `Q1/问：` 与标题问答生成的 `FAQPage` JSON-LD），对人类访客视觉零改动
 3. **四重索引自动联动刷新 + 百度实时主动推送**：
-   - `/insights/index.html`（关键信息专栏总览页）
+   - `/insights/index.html`（关键信息专栏总览页，内置 `Corporation` + `CollectionPage` + `BreadcrumbList` JSON-LD）
    - `/insights/sitemap.xml`（专栏独立 Sitemap）
    - `/insights/llms.txt` 与主站根目录 `/llms.txt`（面向生成式 AI 引擎的标准索引）
    - 主站 `/sitemap.xml`（毫秒级本地合并 `/insights/` 最新文章 URL，杜绝静态 Sitemap 漏更）
@@ -24,3 +24,4 @@
 3. **清除历史曾用名链接遗留**：将页脚站点地图中深交所信息披露外链的旧参数 `ST银亿` 更新为 `山子高科`（HTTPS）。
 4. **`robots.txt` 双 Sitemap 声明与 `IndexNow` 主动推送**：同时声明 `https://www.sensteed.com/sitemap.xml` 与 `https://www.sensteed.com/insights/sitemap.xml`，并在根目录配置 `IndexNow` 验证文件主动推送新 URL。
 5. **头条搜索与百度搜索资源平台 HTML 所有权验证标签**：在主站中英文头部源码模板（`gb_header.html.php`、`en_header.html.php`）及 XYCMS 编译缓存（`tpl_default_gb_header.php`、`tpl_default_en_header.php`）的 `<head>` 内同步写入 `bytedance-verification-code` 与 `baidu-site-verification` 两条 `<meta>` 标签，与根目录历史验证文件并存，请勿删除。
+6. **主站全站隐形 `Corporation` JSON-LD 实体锚点**：在主站中英文头部源码模板（`gb_header.html.php`、`en_header.html.php`）及编译缓存（`tpl_default_gb_header.php`、`tpl_default_en_header.php`）的 `<head>` 内注入标准 `https://schema.org/Corporation` JSON-LD（`@id: https://www.sensteed.com/#corporation`），明确声明证券代码 `SZSE:000981`、法定名称 `山子高科技股份有限公司`（`ShanZi High-Tech Co., Ltd.`）、核心下属企业 `邦奇动力 (Punch Powertrain)` 与 `艾尔希 (ARC Automotive)` 及核心技术领域，并与 `/insights/` 专栏及单篇静态页的 `@graph`（`Corporation + CollectionPage / NewsArticle + BreadcrumbList + FAQPage`）实现统一 `@id` 实体关联，对人类访客页面外观零影响。

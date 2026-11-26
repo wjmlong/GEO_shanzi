@@ -157,10 +157,15 @@ function ins_safe_file_slug($slug, $id) {
 function ins_plain_text($html) {
     $s = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', (string)$html);
     $s = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $s);
+    $s = str_replace(
+        array('&nbsp;', '&ldquo;', '&rdquo;', '&mdash;', '&middot;', '&quot;'),
+        array(' ', '“', '”', '—', '·', '"'),
+        $s
+    );
     $s = strip_tags($s);
     $s = html_entity_decode($s, ENT_QUOTES, 'UTF-8');
-    $s = str_replace(array("\xc2\xa0", '&nbsp;'), ' ', $s);
-    $s = trim(preg_replace('/\s+/u', ' ', $s));
+    $s = str_replace("\xc2\xa0", ' ', $s);
+    $s = trim(preg_replace('/[ \t\r\n]+/', ' ', $s));
     return $s;
 }
 
@@ -172,19 +177,141 @@ function ins_utf8_cut($str, $len) {
     return substr($str, 0, $len * 3);
 }
 
+function ins_corporation_node($mainUrl, $baseUrl) {
+    return array(
+        '@type' => 'Corporation',
+        '@id' => $mainUrl . '/#corporation',
+        'name' => '山子高科技股份有限公司',
+        'legalName' => 'ShanZi High-Tech Co., Ltd.',
+        'alternateName' => array('山子高科', 'Sensteed', '000981.SZ'),
+        'tickerSymbol' => 'SZSE:000981',
+        'url' => $mainUrl . '/',
+        'sameAs' => array($baseUrl . '/'),
+        'knowsAbout' => array(
+            '汽车自动变速器(CVT)',
+            '混动双离合变速器(DT2)',
+            '新能源电驱动总成(DHT)',
+            '紧凑型双逆变器',
+            '汽车安全气囊气体发生器',
+            '半导体先进封装材料'
+        ),
+        'subOrganization' => array(
+            array('@type' => 'Organization', 'name' => '邦奇动力 (Punch Powertrain)'),
+            array('@type' => 'Organization', 'name' => '艾尔希 (ARC Automotive)')
+        )
+    );
+}
+
 function ins_extract_faqs($html) {
     $faqs = array();
-    if (preg_match_all('/<h[23][^>]*>(.*?)<\/h[23]>\s*<p[^>]*>(.*?)<\/p>/is', (string)$html, $m, PREG_SET_ORDER)) {
+    $work = (string)$html;
+    $work = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $work);
+    $work = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $work);
+    // Strip tables and mark boundary so table cells never leak into preceding answers
+    $work = preg_replace('/<table\b[^>]*>.*?<\/table>/is', "\n__FAQ_STOP__\n", $work);
+    // Mark headings so non-question section headers cleanly terminate open answers
+    $work = preg_replace('/<h[1-6][^>]*>(.*?)<\/h[1-6]>/is', "\n__FAQ_H__$1\n", $work);
+    // Break inline bold question headers onto their own line before stripping tags
+    $work = preg_replace('/<strong[^>]*>[ \t\r\n]*((?:[Qq]\d+[ \t]*(?::|：|\.|、)|问[ \t]*(?::|：)).*?)<\/strong>/is', "\n$1\n", $work);
+    $work = preg_replace('/<b[^>]*>[ \t\r\n]*((?:[Qq]\d+[ \t]*(?::|：|\.|、)|问[ \t]*(?::|：)).*?)<\/b>/is', "\n$1\n", $work);
+    // Convert block boundaries & <br> into newlines
+    $work = preg_replace('/<[ \t]*br[ \t]*\/?[ \t]*>/i', "\n", $work);
+    $work = preg_replace('/<\/[ \t]*(?:p|div|li|tr|section|article)[ \t]*>/i', "\n", $work);
+    $work = str_replace(
+        array('&nbsp;', '&ldquo;', '&rdquo;', '&mdash;', '&middot;', '&quot;'),
+        array(' ', '“', '”', '—', '·', '"'),
+        $work
+    );
+    $work = strip_tags($work);
+    $work = html_entity_decode($work, ENT_QUOTES, 'UTF-8');
+    $work = str_replace("\xc2\xa0", ' ', $work);
+
+    $rawLines = preg_split('/\r\n|\r|\n/', $work);
+    $curQ = '';
+    $curAParts = array();
+
+    $stopPattern = '/^(?:(?:\(|（|【|\[)[ \t]*)?(?:合规与核验|核验与说明|官方查证|免责声明|声明[ \t]*(?::|：)|资料来源|数据来源|参考资料|风险提示|本文基于|本文所引|本文所有|以上信息均来自|结语)/';
+    $qPrefixPattern = '/^(?:[Qq]\d+[ \t]*(?::|：|\.|、)[ \t]*|问[ \t]*(?::|：)[ \t]*)(.+)$/';
+
+    foreach ($rawLines as $rl) {
+        $line = trim(preg_replace('/[ \t]+/', ' ', (string)$rl));
+        if ($line === '') {
+            continue;
+        }
+        $isHeading = false;
+        if (strpos($line, '__FAQ_H__') === 0) {
+            $isHeading = true;
+            $line = trim(substr($line, 9));
+            if ($line === '') continue;
+        }
+        if ($line === '__FAQ_STOP__') {
+            if ($curQ !== '' && !empty($curAParts)) {
+                $ans = trim(implode(' ', $curAParts));
+                if ($ans !== '') {
+                    $faqs[] = array('q' => $curQ, 'a' => ins_utf8_cut($ans, 500));
+                }
+            }
+            $curQ = '';
+            $curAParts = array();
+            continue;
+        }
+        if (preg_match('/^(?:【?FAQ|常见.*问答|常见问题|产业观察问答)/i', $line)) {
+            continue;
+        }
+        if (preg_match($qPrefixPattern, $line, $qm)) {
+            if ($curQ !== '' && !empty($curAParts)) {
+                $ans = trim(implode(' ', $curAParts));
+                if ($ans !== '') {
+                    $faqs[] = array('q' => $curQ, 'a' => ins_utf8_cut($ans, 500));
+                }
+            }
+            $curQ = trim($qm[1]);
+            $curAParts = array();
+            continue;
+        }
+        if ($isHeading) {
+            if ($curQ !== '' && !empty($curAParts)) {
+                $ans = trim(implode(' ', $curAParts));
+                if ($ans !== '') {
+                    $faqs[] = array('q' => $curQ, 'a' => ins_utf8_cut($ans, 500));
+                }
+            }
+            $curQ = '';
+            $curAParts = array();
+            continue;
+        }
+        if ($curQ !== '') {
+            if (preg_match($stopPattern, $line)) {
+                if (!empty($curAParts)) {
+                    $ans = trim(implode(' ', $curAParts));
+                    if ($ans !== '') {
+                        $faqs[] = array('q' => $curQ, 'a' => ins_utf8_cut($ans, 500));
+                    }
+                }
+                $curQ = '';
+                $curAParts = array();
+                continue;
+            }
+            $aLine = preg_replace('/^(?:[Aa]\d*[ \t]*(?::|：|\.|、)[ \t]*|答[ \t]*(?::|：)[ \t]*)/', '', $line);
+            if ($aLine !== '' && count($curAParts) < 3) {
+                $curAParts[] = $aLine;
+            }
+        }
+    }
+    if ($curQ !== '' && !empty($curAParts)) {
+        $ans = trim(implode(' ', $curAParts));
+        if ($ans !== '') {
+            $faqs[] = array('q' => $curQ, 'a' => ins_utf8_cut($ans, 500));
+        }
+    }
+
+    // Fallback: heading question <h2>/<h3> ending with ? followed by <p>
+    if (empty($faqs) && preg_match_all('/<h[234][^>]*>(.*?)<\/h[234]>\s*<p[^>]*>(.*?)<\/p>/is', (string)$html, $m, PREG_SET_ORDER)) {
         foreach ($m as $hit) {
             $q = ins_plain_text($hit[1]);
             $a = ins_plain_text($hit[2]);
-            if ($q === '' || $a === '') continue;
-            if (strpos($q, '?') !== false || strpos($q, '？') !== false || preg_match('/^(Q\d+|问[:：])/iu', $q)) {
-                $qClean = preg_replace('/^(Q\d+\s*[:：\.、]\s*|问\s*[:：]\s*)/iu', '', $q);
-                $aClean = preg_replace('/^(A\d*\s*[:：\.、]\s*|答\s*[:：]\s*)/iu', '', $a);
-                if ($qClean !== '' && $aClean !== '') {
-                    $faqs[] = array('q' => $qClean, 'a' => $aClean);
-                }
+            if ($q !== '' && $a !== '' && (strpos($q, '?') !== false || strpos($q, '？') !== false)) {
+                $faqs[] = array('q' => $q, 'a' => ins_utf8_cut($a, 500));
             }
         }
     }
@@ -235,22 +362,35 @@ function ins_render_article_html($config, $art) {
 
     $pageTitle = $title . ' - 山子高科(000981)';
 
-    $articleSchema = array(
-        '@context' => 'https://schema.org',
-        '@type' => 'NewsArticle',
-        'headline' => $title,
-        'description' => $metaDesc,
-        'datePublished' => $pubDate,
-        'dateModified' => isset($art['updated_ymd']) ? (string)$art['updated_ymd'] : $pubDate,
-        'inLanguage' => 'zh-CN',
-        'mainEntityOfPage' => array('@type' => 'WebPage', '@id' => $url),
-        'url' => $url,
-        'articleSection' => $catName,
-        'author' => array('@type' => 'Organization', 'name' => '山子高科技股份有限公司', 'url' => $mainUrl . '/'),
-        'publisher' => array('@type' => 'Organization', 'name' => '山子高科技股份有限公司', 'url' => $mainUrl . '/')
+    $corpRef = array('@id' => $mainUrl . '/#corporation');
+    $graph = array(
+        ins_corporation_node($mainUrl, $baseUrl),
+        array(
+            '@type' => 'NewsArticle',
+            '@id' => $url . '#article',
+            'headline' => $title,
+            'description' => $metaDesc,
+            'datePublished' => $pubDate,
+            'dateModified' => isset($art['updated_ymd']) ? (string)$art['updated_ymd'] : $pubDate,
+            'inLanguage' => 'zh-CN',
+            'mainEntityOfPage' => array('@type' => 'WebPage', '@id' => $url),
+            'url' => $url,
+            'articleSection' => $catName,
+            'author' => $corpRef,
+            'publisher' => $corpRef,
+            'about' => $corpRef
+        ),
+        array(
+            '@type' => 'BreadcrumbList',
+            '@id' => $url . '#breadcrumb',
+            'itemListElement' => array(
+                array('@type' => 'ListItem', 'position' => 1, 'name' => '山子高科官网', 'item' => $mainUrl . '/'),
+                array('@type' => 'ListItem', 'position' => 2, 'name' => '关键信息与产业观察', 'item' => $baseUrl . '/'),
+                array('@type' => 'ListItem', 'position' => 3, 'name' => $title, 'item' => $url)
+            )
+        )
     );
 
-    $schemas = '<script type="application/ld+json">' . ins_json_encode_utf8($articleSchema) . '</script>';
     $faqs = ins_extract_faqs($bodyHtml);
     if (!empty($faqs)) {
         $faqEntities = array();
@@ -261,13 +401,18 @@ function ins_render_article_html($config, $art) {
                 'acceptedAnswer' => array('@type' => 'Answer', 'text' => $fq['a'])
             );
         }
-        $faqSchema = array(
-            '@context' => 'https://schema.org',
+        $graph[] = array(
             '@type' => 'FAQPage',
+            '@id' => $url . '#faq',
             'mainEntity' => $faqEntities
         );
-        $schemas .= "\n" . '<script type="application/ld+json">' . ins_json_encode_utf8($faqSchema) . '</script>';
     }
+
+    $graphDoc = array(
+        '@context' => 'https://schema.org',
+        '@graph' => $graph
+    );
+    $schemas = '<script type="application/ld+json">' . ins_json_encode_utf8($graphDoc) . '</script>';
 
     $html = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -381,13 +526,27 @@ function ins_rebuild_indexes($dir, $config) {
     $siteDesc = (string)$config['site_description'];
     $today = date('Y-m-d');
 
-    // 1. Rebuild /insights/index.html
+    // 1. Rebuild all stored article HTML files + /insights/index.html
     $cards = '';
+    $hasPartList = array();
     if (empty($items)) {
         $cards = '<div class="card"><p>资料索引库已就绪，正在同步公开资料。</p></div>';
     } else {
         foreach ($items as $it) {
+            $artJsonFile = $dir . '/storage/articles/' . $it['file_slug'] . '.json';
+            if (is_file($artJsonFile)) {
+                $artFull = json_decode((string)file_get_contents($artJsonFile), true);
+                if (is_array($artFull) && !empty($artFull['file_slug'])) {
+                    @file_put_contents($dir . '/article/' . $artFull['file_slug'] . '.html', ins_render_article_html($config, $artFull));
+                }
+            }
             $u = $baseUrl . '/article/' . $it['file_slug'] . '.html';
+            $hasPartList[] = array(
+                '@type' => 'NewsArticle',
+                'headline' => (string)$it['title'],
+                'url' => $u,
+                'datePublished' => (string)$it['date_ymd']
+            );
             $cards .= '<div class="card">'
                 . '<h2><a href="' . ins_h($u) . '">' . ins_h($it['title']) . '</a></h2>'
                 . '<div class="meta">' . ins_h($it['date_ymd']) . ' &nbsp;|&nbsp; ' . ins_h($it['category_name']) . '</div>'
@@ -396,6 +555,33 @@ function ins_rebuild_indexes($dir, $config) {
         }
     }
 
+    $indexGraph = array(
+        '@context' => 'https://schema.org',
+        '@graph' => array(
+            ins_corporation_node($mainUrl, $baseUrl),
+            array(
+                '@type' => 'CollectionPage',
+                '@id' => $baseUrl . '/#collection',
+                'url' => $baseUrl . '/',
+                'name' => $siteName . ' - 山子高科(000981.SZ)',
+                'description' => $siteDesc,
+                'inLanguage' => 'zh-CN',
+                'about' => array('@id' => $mainUrl . '/#corporation'),
+                'publisher' => array('@id' => $mainUrl . '/#corporation'),
+                'hasPart' => $hasPartList
+            ),
+            array(
+                '@type' => 'BreadcrumbList',
+                '@id' => $baseUrl . '/#breadcrumb',
+                'itemListElement' => array(
+                    array('@type' => 'ListItem', 'position' => 1, 'name' => '山子高科官网', 'item' => $mainUrl . '/'),
+                    array('@type' => 'ListItem', 'position' => 2, 'name' => '关键信息与产业观察', 'item' => $baseUrl . '/')
+                )
+            )
+        )
+    );
+    $indexSchemaTag = '<script type="application/ld+json">' . ins_json_encode_utf8($indexGraph) . '</script>';
+
     $indexHtml = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width,initial-scale=1">'
         . '<title>' . ins_h($siteName . ' - 山子高科(000981)') . '</title>'
@@ -403,6 +589,7 @@ function ins_rebuild_indexes($dir, $config) {
         . '<meta name="keywords" content="' . ins_h($config['site_keywords']) . '">'
         . '<link rel="canonical" href="' . ins_h($baseUrl . '/') . '">'
         . '<link rel="stylesheet" href="assets/site.css">'
+        . $indexSchemaTag
         . '</head><body>'
         . '<header class="topbar"><div class="wrap bar">'
         . '<a class="brand" href="' . ins_h($baseUrl . '/') . '">山子高科 000981.SZ <small>关键信息</small></a>'
